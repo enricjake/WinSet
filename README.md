@@ -181,7 +181,215 @@ WinSet comes with **10 ready-to-use presets** for every scenario:
 # 4. On new PC, click "Import Settings"
 # 5. Done! All settings restored
 ```
+🔀 Hybrid Mode: Mix & Match Presets
+"I want Gaming performance with Privacy protection"
+"I need Work productivity with Accessibility features"
+"I love Creator colors with Battery saving"
 
+Now you can have it all.
+
+🎯 The Problem
+Gamers want maximum FPS. Privacy advocates want telemetry off. Creators want color accuracy. What if you're ALL of these things?
+
+💡 The Solution: Hybrid Mode
+WinSet's revolutionary Hybrid Mode lets you combine any presets together, creating your perfect custom configuration.
+
+⚙️ How It Works
+text
+┌─────────────────────────────────────────────────────────┐
+│                 HYBRID CONFIGURATOR                     │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  Step 1: Select Base Preset                             │
+│  └──► [✓] Gaming Mode                                   │
+│                                                         │
+│  Step 2: Add Additional Presets                         │
+│  └──► [✓] Privacy Mode                                  │
+│  └──► [✓] Battery Saver Mode                            │
+│  └──► [ ] Developer Mode                                │
+│                                                         │
+│  Step 3: Review Conflicts                               │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │  ⚠️ CONFLICT DETECTED                            │   │
+│  │  Setting: Telemetry Level                        │   │
+│  │  Gaming Mode: Full (3)                           │   │
+│  │  Privacy Mode: Security (0) 🔥 WINNER            │   │
+│  │  └──► Privacy overrides Gaming                   │   │
+│  ├─────────────────────────────────────────────────┤   │
+│  │  ⚠️ CONFLICT DETECTED                            │   │
+│  │  Setting: Power Plan                             │   │
+│  │  Gaming Mode: Ultimate Performance               │   │
+│  │  Battery Mode: Power Saver 🔥 WINNER             │   │
+│  │  └──► Battery overrides Gaming                   │   │
+│  └─────────────────────────────────────────────────┘   │
+│                                                         │
+│  Step 4: Choose Conflict Resolution                    │
+│  ○ Last preset wins (default)                           │
+│  ● Manual selection for each conflict                   │
+│  ○ Ask me every time                                    │
+│                                                         │
+│  [      PREVIEW HYBRID CONFIG      ]                    │
+└─────────────────────────────────────────────────────────┘
+🔄 Conflict Resolution Rules
+WinSet uses a simple but powerful rule system:
+
+Rule 1: Order Matters (Default)
+The last preset you select wins all conflicts:
+
+text
+Select order: Gaming → Privacy → Battery
+Result: Battery settings override both Gaming and Privacy
+Rule 2: Priority Groups (Advanced)
+You can assign priority levels to categories:
+
+json
+{
+  "privacy": "CRITICAL",      // Always overrides others
+  "security": "CRITICAL",      // Never compromised
+  "performance": "HIGH",       // Usually wins but not over critical
+  "appearance": "LOW"         // Can be overridden by anything
+}
+Rule 3: Manual Override
+You decide each conflict individually:
+
+text
+┌────────────────────────────────────────┐
+│ CONFLICT: Power Plan                   │
+├────────────────────────────────────────┤
+│ Gaming Mode says: Ultimate Performance │
+│ Battery Mode says: Power Saver         │
+├────────────────────────────────────────┤
+│ Choose winner:                         │
+│ ○ Gaming (Performance)                  │
+│ ● Battery (Battery life)                │
+│ ○ Custom value: [Balanced        ]     │
+└────────────────────────────────────────┘
+🎨 Example Hybrid Configurations
+Example 1: The Privacy-First Gamer
+yaml
+Base Preset: Gaming Mode
+Add: Privacy Mode
+Add: Performance Mode
+
+Result:
+✓ Gaming: Game Mode ON, GPU scheduling ON
+✓ Privacy: Telemetry OFF, Camera BLOCKED, Advertising ID OFF
+✓ Performance: Visual effects OFF, Animations OFF
+⚠️ Power Plan: Privacy doesn't touch it, Gaming wins
+→ Final: Gaming Performance + Privacy Protection
+Example 2: The Mobile Creator
+yaml
+Base Preset: Creator Mode
+Add: Battery Saver Mode
+Add: Accessibility Mode
+
+Conflicts:
+- Display Brightness: Creator (100%) vs Battery (40%) → Battery wins
+- Color Calibration: Creator (sRGB) vs Battery (Default) → Creator wins
+- Text Size: Creator (100%) vs Accessibility (150%) → Accessibility wins
+
+Result: Color-accurate, easy-to-read, long-lasting laptop
+Example 3: The Developer's Workstation
+yaml
+Base Preset: Developer Mode
+Add: Work Mode
+Add: Performance Mode
+
+Conflicts:
+- File Explorer: Dev (Show hidden) vs Work (Default) → Dev wins
+- Power Plan: Performance (High Perf) vs Work (Balanced) → Performance wins
+- Visual Effects: Performance (Off) vs Work (On) → Performance wins
+
+Result: Developer tools + Work productivity + Maximum speed
+📊 Conflict Matrix
+See how presets interact:
+
+Setting Category	Gaming	Privacy	Performance	Battery	Creator	Work
+Telemetry	Full	🔥 Security	Basic	Full	Basic	Basic
+Power Plan	Ultimate	Balanced	🔥 High Perf	Power Saver	Balanced	Balanced
+Visual Effects	On	Default	🔥 Off	Off	On	Default
+Game Mode	🔥 On	Off	On	Off	Off	Off
+Camera Access	Ask	🔥 Block	Ask	Ask	Ask	Block
+File Extensions	Hide	Show	Show	Hide	🔥 Show	Hide
+🔥 = Wins in conflicts by default
+
+💾 Saving Hybrid Profiles
+Once you've created your perfect mix, save it as a Custom Preset:
+
+text
+┌────────────────────────────────────┐
+│ SAVE HYBRID PROFILE                │
+├────────────────────────────────────┤
+│ Name: My Ultimate Setup            │
+│ Based on: Gaming + Privacy + Dev   │
+│                                      │
+│ [✓] Include conflict decisions      │
+│ [✓] Make this a new preset          │
+│ [ ] Share anonymously               │
+│                                      │
+│ [        SAVE PROFILE        ]      │
+└────────────────────────────────────┘
+Your custom preset can then be:
+
+Used again later
+
+Shared with friends
+
+Imported on other PCs
+
+Used as base for more hybrids
+
+🎮 Real-World Example
+User: Alex, game developer who values privacy
+
+Goal: "I need my PC to run games smoothly, protect my privacy, and have developer tools ready"
+
+Process:
+
+Select Gaming Mode (base)
+
+Add Privacy Mode (override telemetry, camera)
+
+Add Developer Mode (override file settings)
+
+Review conflicts:
+
+Telemetry: Privacy wins ✓
+
+Power Plan: Gaming wins ✓
+
+File Explorer: Developer wins ✓
+
+Save as "DevGamer Privacy Edition"
+
+Result in 2 minutes: A perfectly balanced system that Alex could never have configured manually.
+
+🔧 Pro Tips
+Start with the broadest preset as your base, then add specific ones
+
+Use Manual Mode for your first hybrid to understand conflicts
+
+Save frequently - your perfect hybrid deserves a preset name
+
+Check the Summary before applying to avoid surprises
+
+Export your decisions to share with friends
+
+🚀 Coming Soon: AI Recommendations
+Future versions will suggest optimal hybrid combinations:
+
+"Based on your installed games and privacy concerns, try this mix..."
+
+"You have a laptop and do design work - here's your ideal hybrid..."
+
+"Community favorite: 87% of developers use this combination..."
+
+📝 Why This Matters
+Before WinSet: You had to choose - gaming OR privacy OR performance. Compromise somewhere.
+
+With WinSet Hybrid: Get exactly what you want. No compromises. No hours of tweaking. Just your perfect Windows.
+
+Because you shouldn't have to choose between privacy and performance. 🔥
 ---
 
 ## 💻 **Installation**
