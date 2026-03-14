@@ -1,5 +1,5 @@
 # Core dependencies
-pywin32==306              # Windows API access
+pywin32==311              # Windows API access
 cryptography==41.0.7      # For encrypted exports (optional)
 
 # Testing
@@ -7,7 +7,7 @@ pytest==7.4.4
 pytest-cov==4.1.0
 
 # Build
-pyinstaller==6.3.0
+pyinstaller==6.19.0
 
 # Development
 black==23.12.1            # Code formatting

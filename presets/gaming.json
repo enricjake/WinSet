@@ -1,0 +1,47 @@
+{
+  "name": "Gaming Mode",
+  "description": "Optimize Windows for maximum gaming performance",
+  "version": "1.0",
+  "settings": {
+    "game_mode": {
+      "value": 1,
+      "description": "Enable Windows Game Mode"
+    },
+    "visual_effects": {
+      "value": 0,
+      "description": "Disable visual effects for maximum performance"
+    },
+    "background_apps": {
+      "value": 0,
+      "description": "Disable background apps"
+    },
+    "power_plan": {
+      "value": "High Performance",
+      "description": "Set power plan to High Performance"
+    },
+    "mouse_acceleration": {
+      "value": 0,
+      "description": "Disable mouse acceleration for precise aiming"
+    },
+    "fullscreen_optimizations": {
+      "value": 0,
+      "description": "Disable fullscreen optimizations"
+    },
+    "xbox_game_bar": {
+      "value": 0,
+      "description": "Disable Xbox Game Bar"
+    },
+    "xbox_dvr": {
+      "value": 0,
+      "description": "Disable Xbox DVR recording"
+    },
+    "focus_assist": {
+      "value": 2,
+      "description": "Set Focus Assist to priority only"
+    },
+    "animation_effects": {
+      "value": 0,
+      "description": "Disable animation effects"
+    }
+  }
+}
