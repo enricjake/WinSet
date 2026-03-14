@@ -1,183 +1,142 @@
+# 🔧 WinSet - Windows Settings Configuration Manager
 
-# 🎯 WinSet — Windows Configuration Manager
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![Downloads](https://img.shields.io/github/downloads/yourusername/tweakbackup/total)](https://github.com/enricjake/WinSet/releases)
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)  
-[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)  
-[![Windows](https://img.shields.io/badge/platform-Windows-0078D4.svg)](https://www.microsoft.com/windows)  
-[![Downloads](https://img.shields.io/github/downloads/enricjake/winset/total)](https://github.com/enricjake/winset/releases)  
-[![Stars](https://img.shields.io/github/stars/enricjake/winset)](https://github.com/enricjake/winset/stargazers)
+**Never manually reconfigure Windows after reinstall again!**
 
-<p align="center">
-  <img src="docs/images/winset_logo.png" width="200"/>
-</p>
+WinSet exports ALL your Windows settings to a single file. After reinstalling Windows, import that file and all your preferences are back in seconds.
 
-<p align="center">
-<b>Your Windows, perfectly configured — fresh installs or daily drivers</b>
-</p>
+## ✨ Features
 
----
+- 🎨 **System Appearance** - Theme, wallpaper, accent colors, icons
+- 📁 **File Explorer** - Hidden files, extensions, folder views
+- 🖱️ **Taskbar & Start Menu** - Pinned apps, layout, search settings
+- ⚡ **Power Settings** - Plans, sleep timers, lid actions
+- 🔒 **Privacy Options** - Permissions, telemetry, location
+- 💾 **One-Click Export/Import** - Single JSON file
+- 🔄 **Profile Manager** - Save multiple configurations
+- 🛡️ **Safe Mode** - Registry backup before changes
 
-## ✨ Why WinSet?
+## 🚀 Quick Start
 
-**New PC?** Apply a preset instantly.  
-**Reinstalling?** Export & restore your configuration.  
-**Tweaker?** Compare and share optimal setups.
-
-WinSet is a **complete Windows configuration ecosystem** that lets you:
-
-- 🚀 Optimize performance or battery
-- 🔒 Lock down privacy
-- 🎮 Configure for gaming
-- 💼 Configure for productivity
-- 🔄 Migrate settings across PCs
-- 👥 Share configs with others
-
----
-
-## 🎨 Features
-
-### Two Modes
-
-```
-Existing PC → Export → Save → Share
-New PC      → Preset → Preview → Apply
-```
-
-### Configurable Areas
-
-| Category | Settings |
-|---------|----------|
-| 🎨 Appearance | Themes, colors, wallpaper, transparency |
-| 📁 Explorer | Hidden files, extensions, navigation |
-| 🖱 Taskbar | Alignment, icons, widgets |
-| ⚡ Power | Plans, CPU tuning, cooling |
-| 🔒 Privacy | Telemetry, mic/camera, location |
-| 🎮 Gaming | Game Mode, GPU scheduling |
-| ⌨ Input | Mouse speed, keyboard |
-| 🌐 Regional | Date, currency, measurement |
-| ♿ Accessibility | Narrator, contrast |
-| 🔧 Advanced | Virtual memory, DEP |
+1. Download the latest `WinSet.exe` from [Releases](https://github.com/enricjake/WinSet/releases)
+2. Run as Administrator (required for registry access)
+3. Click "Export" to save your settings
+4. On new PC, run and click "Import"
 
 ---
 
 ## 🎯 Built-in Presets
 
-WinSet includes **10 presets**:
+WinSet comes with **10 ready-to-use presets** for every scenario:
 
-- 🚀 Performance
-- 🛡 Privacy
-- 🎮 Gaming
-- 👤 Default Windows
-- 🏢 Work
-- 🔋 Battery Saver
-- ♿ Accessibility
-- 🎨 Creator
-- 🔧 Developer
-- ⭐ Custom
+### 🚀 Performance Mode
+*"Maximum speed, minimal eye candy"*
+- Disables visual effects and animations
+- Enables Game Mode
+- Sets High Performance power plan
+- Optimizes for foreground programs
+
+### 🛡️ Privacy-Focused Mode
+*"Maximum privacy, minimal data sharing"*
+- Sets telemetry to Security level (0)
+- Disables advertising ID
+- Blocks camera/mic by default
+- Turns off activity history
+
+### 🎮 Gaming Mode
+*"Optimized for the best gaming experience"*
+- Enables Game Mode and Game Bar
+- Hardware-accelerated GPU scheduling
+- Ultimate Performance power plan
+- Pauses Windows updates during gameplay
+
+### 👤 Default Windows Mode
+*"Clean Windows install defaults"*
+- Resets everything to out-of-box state
+- Perfect for troubleshooting
+- Benchmark baseline
+
+### 🏢 Work/Business Mode
+*"Productivity optimized"*
+- Enables snap layouts and virtual desktops
+- Maximum security settings
+- Focus Assist on during work hours
+- Clipboard history enabled
+
+### 💡 Battery Saver Mode
+*"Maximize laptop battery life"*
+- Power Saver plan active
+- Reduced screen brightness
+- Aggressive timeouts
+- USB selective suspend on
+
+### ♿ Accessibility Mode
+*"Easier to see, hear, and use"*
+- Larger text and cursors
+- Visual sound alerts
+- Sticky/Filter/Toggle Keys on
+- Narrator ready
+
+### 🎨 Creator/Designer Mode
+*"Color accuracy & precision"*
+- sRGB calibration
+- HDR optimization
+- Pen input optimized
+- ClearType enabled
+
+### 🔧 Developer Mode
+*"For coders and power users"*
+- Developer Mode enabled
+- WSL and Hyper-V ready
+- File extensions always visible
+- PowerShell unrestricted
+
+### ⭐ Custom Presets
+*"Save your perfect combination"*
+- Create your own presets
+- Mix and match settings
+- Share with the community
 
 ---
 
-## 🔀 Hybrid Mode (Core Feature)
+## 🔀 Hybrid Mode: Mix & Match Presets
 
-Combine presets into a **single optimized configuration**.
+*"I want Gaming performance with Privacy protection"*  
+*"I need Work productivity with Accessibility features"*  
+*"I love Creator colors with Battery saving"*  
 
-Example:
+**Now you can have it all.**
 
-```
-Base: Gaming
-Add: Privacy
-Add: Battery
-```
+### ⚙️ How Hybrid Mode Works
 
-Conflict example:
+**Step 1:** Select a base preset (e.g., Gaming Mode)  
+**Step 2:** Add additional presets (e.g., Privacy + Battery)  
+**Step 3:** Review conflicts and choose winners  
+**Step 4:** Apply your perfect custom configuration
 
-```
-Telemetry:
-Gaming → Full
-Privacy → Security (WINNER)
+### 🔄 Conflict Resolution
 
-Power Plan:
-Gaming → Ultimate Performance
-Battery → Power Saver (WINNER)
-```
+When presets disagree, WinSet lets you decide:
 
----
-
-## 🚀 Quick Start
-
-### New PC
-
-```
-1. Run WinSet as admin
-2. Apply preset
-3. Done
-```
-
-### Existing PC
-
-```
-1. Export settings
-2. Import on new PC
-```
+- **Order Matters** - Last preset selected wins by default
+- **Manual Override** - Choose winners for each conflict
+- **Priority Groups** - Assign importance to categories
 
 ---
 
-## 💻 Installation
+## 📸 Screenshots
 
-### Download EXE (Recommended)
+*[Screenshots coming soon]*
 
-https://github.com/enricjake/winset/releases
+---
 
-### pip
+## 🛠️ Building from Source
 
-```
-pip install winset
-winset --gui
-```
-
-### From Source
-
-```
-git clone https://github.com/enricjake/winset.git
-cd winset
+```bash
+git clone https://github.com/enricjake/WinSet.git
+cd WinSet
 pip install -r requirements.txt
-python src/main.py
-```
-
----
-
-## 🔧 Build
-
-```
-pyinstaller --onefile --windowed --icon=icon.ico --name=WinSet src/main.py
-```
-
----
-
-## 📊 Roadmap
-
-### 1.0
-- Presets
-- Export/import
-- GUI
-
-### 1.5
-- Preset editor
-- CLI
-
-### 2.0
-- Cloud sync
-- Preset gallery
-- AI recommendations
-
----
-
-## 📝 License
-
-MIT
-
----
-
-## ⭐ Support
-
-If you find WinSet useful, **star the repo**.
+python WinSet.py
