@@ -29,5 +29,5 @@ This project and everyone participating in it is governed by our Code of Conduct
 
 1. Clone your fork
 ```bash
-git clone https://github.com/your-username/WinSet.git
+git clone https://github.com/enricjake/WinSet.git
 cd WinSet
