@@ -25,7 +25,7 @@ class Profile:
     @property
     def checksum(self) -> str:
         """Generate checksum for integrity verification"""
-        data = json.dumps(self.export(), sort_keys=True)
+        data = json.dumps(self.export(include_checksum=False), sort_keys=True)
         return hashlib.sha256(data.encode()).hexdigest()
     
     def add_setting(self, setting: Setting):
@@ -55,9 +55,9 @@ class Profile:
                 # Log error
         return results
     
-    def export(self) -> dict:
+    def export(self, include_checksum: bool = True) -> dict:
         """Export profile to dictionary"""
-        return {
+        data = {
             "name": self.name,
             "created": self.created.isoformat(),
             "modified": self.modified.isoformat(),
@@ -67,9 +67,11 @@ class Profile:
             "tags": self.tags,
             "settings": {
                 sid: s.export() for sid, s in self.settings.items()
-            },
-            "checksum": self.checksum
+            }
         }
+        if include_checksum:
+            data["checksum"] = self.checksum
+        return data
     
     @classmethod
     def import_from_dict(cls, data: dict) -> 'Profile':
