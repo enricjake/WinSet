@@ -3,9 +3,16 @@ Main window for WinSet application
 """
 
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, filedialog
 import sys
 import os
+
+# Import managers
+from src.storage.exporter import ProfileExporter
+from src.storage.importer import ProfileImporter
+from src.presets.preset_manager import PresetManager
+from src.utils.backup_manager import BackupManager
+from src.models.setting import RegistrySetting, SettingCategory, SettingType
 
 class MainWindow:
     """Main application window"""
@@ -18,6 +25,12 @@ class MainWindow:
         
         # Set icon (if you create one later)
         # self.root.iconbitmap("assets/icon.ico")
+        
+        # Initialize Managers
+        self.preset_manager = PresetManager()
+        self.importer = ProfileImporter()
+        self.exporter = ProfileExporter()
+        self.backup_manager = BackupManager()
         
         self._create_menu()
         self._create_toolbar()
@@ -321,22 +334,95 @@ Get started by choosing an option below:"""
     
     # Command methods
     def export_settings(self):
-        messagebox.showinfo("Export", "Export feature coming soon!")
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".json",
+            filetypes=[("JSON files", "*.json")],
+            title="Export Profile"
+        )
+        if not file_path:
+            return
+            
+        settings = []
+        # Since manual config tab isn't fully wired yet, we use a placeholder setting 
+        # just to prove the exporter can work, but you'd normally extract checked items here.
+        settings.append(
+             RegistrySetting(
+                 id="test_export",
+                 name="Test Export Node",
+                 description="A sample setting to test the exporter.",
+                 category=SettingCategory.SYSTEM,
+                 setting_type=SettingType.REGISTRY,
+                 value=0,
+                 default_value=0,
+                 hive="HKEY_CURRENT_USER",
+                 key_path="SOFTWARE\\WinSet\\Test",
+                 value_name="ExportTest",
+                 value_type="REG_DWORD"
+             )
+        )
+        
+        success = self.exporter.export_profile(settings, file_path, profile_name="WinSet Manual Export")
+        if success:
+            messagebox.showinfo("Export Successful", f"Profile successfully exported to:\n{file_path}")
+        else:
+            messagebox.showerror("Export Failed", "There was an error exporting the profile.")
         
     def import_settings(self):
-        messagebox.showinfo("Import", "Import feature coming soon!")
+        file_path = filedialog.askopenfilename(
+            filetypes=[("JSON files", "*.json")],
+            title="Select Profile to Import"
+        )
+        if not file_path:
+            return
+            
+        success, msg, profile = self.importer.load_profile(file_path)
+        if not success:
+            messagebox.showerror("Import Failed", msg)
+            return
+            
+        if messagebox.askyesno("Confirm Import", f"Are you sure you want to apply settings from '{profile.name}'?"):
+            self.backup_manager.create_restore_point(f"WinSet - Before Profile '{profile.name}'")
+            results = self.importer.apply_profile(profile)
+            
+            success_count = sum(1 for v in results.values() if v)
+            messagebox.showinfo(
+                "Import Complete", 
+                f"Successfully applied {success_count} settings from '{profile.name}'."
+            )
         
     def apply_preset(self, preset_name):
-        messagebox.showinfo("Apply Preset", f"Applying {preset_name} preset...\n\nThis feature is under development.")
+        preset_id = preset_name.split(" ")[-1].lower() if " " in preset_name else preset_name.lower()
+        if preset_id == "max": preset_id = "privacy"
+        if preset_id == "mode": preset_id = preset_name.split(" ")[1].lower()
+        if preset_name == "developer": preset_id = "developer"
+        if preset_name == "gaming": preset_id = "gaming"
+        if preset_name == "privacy": preset_id = "privacy"
+        if preset_name == "performance": preset_id = "performance"
+        if preset_name == "battery": preset_id = "battery"
+
+        
+        if messagebox.askyesno("Confirm Preset", f"Are you sure you want to apply the '{preset_name}' preset?"):
+            self.backup_manager.create_restore_point(f"WinSet - Before {preset_name}")
+            success, msg, results = self.preset_manager.apply_preset(preset_id)
+            
+            if success:
+                success_count = sum(1 for v in results.values() if v)
+                messagebox.showinfo("Preset Applied", f"Successfully applied {success_count} settings for '{preset_name}'.\n\nSome changes may require a restart to take full effect.")
+            else:
+                messagebox.showerror("Error", f"Failed to apply preset:\n{msg}")
         
     def manage_presets(self):
         messagebox.showinfo("Manage Presets", "Preset management coming soon!")
         
     def backup_registry(self):
-        messagebox.showinfo("Backup", "Registry backup coming soon!")
+        success = self.backup_manager.create_restore_point("WinSet Manual User Backup")
+        if success:
+            messagebox.showinfo("Backup Successful", "System Restore Point created successfully.")
+        else:
+            messagebox.showerror("Backup Failed", "Failed to create System Restore Point. Make sure you are running as Administrator and System Restore is enabled.")
         
     def create_restore_point(self):
-        messagebox.showinfo("Restore Point", "System restore point feature coming soon!")
+        self.backup_registry()
         
     def open_settings(self):
         messagebox.showinfo("Settings", "Settings dialog coming soon!")
@@ -377,7 +463,8 @@ Created with ❤️ for the Windows community"""
             messagebox.showwarning("No Selection", "Please select at least one category to export.")
             return
         
-        messagebox.showinfo("Export", f"Exporting: {', '.join(selected)}\n\nThis feature is under development.")
+        # In a complete implementation we would fetch dynamic RegistrySettings mapped to these categories here
+        self.export_settings()
 
 # For testing
 if __name__ == "__main__":

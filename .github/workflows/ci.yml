@@ -38,7 +38,7 @@ jobs:
   build:
     needs: test
     runs-on: windows-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: startsWith(github.ref, 'refs/tags/v')
     
     steps:
     - uses: actions/checkout@v4
@@ -61,4 +61,10 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: WinSet-EXE
-        path: dist/
+        path: dist/WinSet.exe
+
+    - name: Release
+      uses: softprops/action-gh-release@v2
+      if: startsWith(github.ref, 'refs/tags/v')
+      with:
+        files: dist/WinSet.exe

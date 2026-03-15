@@ -9,6 +9,7 @@ Usage:
 import subprocess
 import sys
 import shutil
+import os
 from pathlib import Path
 
 
@@ -29,6 +30,7 @@ def build():
         "--windowed",         # No console window (GUI app)
         "--name", "WinSet",
         "--icon", "docs/icon.ico" if Path("docs/icon.ico").exists() else "NONE",
+        "--add-data", f"presets{os.pathsep}presets", # Bundle the presets folder inside the executable
         "winset.py",
     ]
 
