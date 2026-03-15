@@ -77,11 +77,11 @@ class Profile:
     def import_from_dict(cls, data: dict) -> 'Profile':
         """Create profile from dictionary"""
         profile = cls(
-            name=data["name"],
-            created=datetime.fromisoformat(data["created"]),
-            modified=datetime.fromisoformat(data["modified"]),
-            version=data["version"],
-            windows_version=data["windows_version"],
+            name=data.get("name", "Unnamed Profile"),
+            created=datetime.fromisoformat(data["created"]) if "created" in data else datetime.now(),
+            modified=datetime.fromisoformat(data["modified"]) if "modified" in data else datetime.now(),
+            version=data.get("version", "1.0"),
+            windows_version=data.get("windows_version", ""),
             description=data.get("description", ""),
             tags=data.get("tags", [])
         )

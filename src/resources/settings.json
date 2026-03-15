@@ -1,0 +1,2174 @@
+[
+  {
+    "name": "System Appearance",
+    "settings": [
+      {
+        "name": "Desktop Wallpaper",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\Desktop",
+        "value": "Wallpaper",
+        "type": "REG_SZ",
+        "description": "Path to current wallpaper image",
+        "example": "C:\\Users\\Username\\Pictures\\wallpaper.jpg"
+      },
+      {
+        "name": "Wallpaper Style (Stretch/Fill/Fit)",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\Desktop",
+        "value": "WallpaperStyle",
+        "type": "REG_SZ",
+        "values": "0 = Centered, 2 = Stretched, 6 = Fit, 10 = Fill, 22 = Span",
+        "description": "How wallpaper fits the screen"
+      },
+      {
+        "name": "Tile Wallpaper",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\Desktop",
+        "value": "TileWallpaper",
+        "type": "REG_SZ",
+        "values": "0 = No tile, 1 = Tile",
+        "description": "Whether wallpaper is tiled"
+      },
+      {
+        "name": "App Theme (Light/Dark)",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",
+        "value": "AppsUseLightTheme",
+        "type": "REG_DWORD",
+        "values": "1 = Light mode, 0 = Dark mode",
+        "description": "Theme for applications"
+      },
+      {
+        "name": "System Theme (Light/Dark)",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",
+        "value": "SystemUsesLightTheme",
+        "type": "REG_DWORD",
+        "values": "1 = Light mode, 0 = Dark mode",
+        "description": "Theme for system elements (taskbar, start menu)"
+      },
+      {
+        "name": "Accent Color",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\DWM",
+        "value": "AccentColor",
+        "type": "REG_DWORD",
+        "format": "0x00BBGGRR (hex: 00 Blue Green Red)",
+        "example": "0x00FF8000 = Blue accent",
+        "description": "Windows accent color in BGR format"
+      },
+      {
+        "name": "Accent Color (Auto-Selected)",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\DWM",
+        "value": "ColorizationColor",
+        "type": "REG_DWORD",
+        "description": "Auto-selected accent color from wallpaper"
+      },
+      {
+        "name": "Accent Color on Title Bars",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\DWM",
+        "value": "ColorPrevalence",
+        "type": "REG_DWORD",
+        "values": "1 = Show accent on title bars, 0 = Don't show",
+        "description": "Show accent color on window title bars"
+      },
+      {
+        "name": "Show Accent on Start/Taskbar",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",
+        "value": "ColorPrevalence",
+        "type": "REG_DWORD",
+        "values": "1 = Show, 0 = Don't show",
+        "description": "Show accent color on Start menu and taskbar"
+      },
+      {
+        "name": "Transparency Effects",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",
+        "value": "EnableTransparency",
+        "type": "REG_DWORD",
+        "values": "1 = Enable, 0 = Disable",
+        "description": "Enable transparency effects in Windows"
+      },
+      {
+        "name": "Taskbar Transparency",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+        "value": "TaskbarTransparency",
+        "type": "REG_DWORD",
+        "values": "1 = Enable, 0 = Disable",
+        "description": "Make taskbar transparent"
+      },
+      {
+        "name": "Desktop Icon Visibility - This PC",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\HideDesktopIcons\\NewStartPanel",
+        "value": "{20D04FE0-3AEA-1069-A2D8-08002B30309D}",
+        "type": "REG_DWORD",
+        "values": "0 = Show, 1 = Hide",
+        "description": "Show/hide \"This PC\" icon on desktop"
+      },
+      {
+        "name": "Desktop Icon Visibility - Network",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\HideDesktopIcons\\NewStartPanel",
+        "value": "{F02C1A0D-BE21-4350-88B0-7367FC96EF3C}",
+        "type": "REG_DWORD",
+        "values": "0 = Show, 1 = Hide",
+        "description": "Show/hide \"Network\" icon on desktop"
+      },
+      {
+        "name": "Desktop Icon Visibility - Recycle Bin",
+        "hive": "HKEY_LOCAL_MACHINE",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\HideDesktopIcons\\NewStartPanel",
+        "value": "{645FF040-5081-101B-9F08-00AA002F954E}",
+        "type": "REG_DWORD",
+        "values": "0 = Show, 1 = Hide",
+        "description": "Show/hide Recycle Bin on desktop"
+      },
+      {
+        "name": "Desktop Icon Visibility - User's Files",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\HideDesktopIcons\\NewStartPanel",
+        "value": "{59031a47-3f72-44a7-89c5-5595fe6b30ee}",
+        "type": "REG_DWORD",
+        "values": "0 = Show, 1 = Hide",
+        "description": "Show/hide user's files folder on desktop"
+      },
+      {
+        "name": "Desktop Icon Size",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\Shell\\Bags\\1\\Desktop",
+        "value": "IconSize",
+        "type": "REG_DWORD",
+        "values": "32 = Small, 48 = Medium, 96 = Large",
+        "description": "Size of desktop icons in pixels"
+      },
+      {
+        "name": "Desktop Icon Spacing (Horizontal)",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\Desktop\\WindowMetrics",
+        "value": "IconSpacing",
+        "type": "REG_SZ",
+        "format": "-1125 (negative number = pixels)",
+        "description": "Horizontal spacing between desktop icons"
+      },
+      {
+        "name": "Desktop Icon Spacing (Vertical)",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\Desktop\\WindowMetrics",
+        "value": "IconVerticalSpacing",
+        "type": "REG_SZ",
+        "format": "-1125 (negative number = pixels)",
+        "description": "Vertical spacing between desktop icons"
+      },
+      {
+        "name": "Font Smoothing (ClearType)",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\Desktop",
+        "value": "FontSmoothing",
+        "type": "REG_SZ",
+        "values": "0 = Disabled, 2 = Enabled",
+        "description": "Enable/disable font smoothing"
+      },
+      {
+        "name": "Font Smoothing Type",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\Desktop",
+        "value": "FontSmoothingType",
+        "type": "REG_DWORD",
+        "values": "1 = Standard, 2 = ClearType",
+        "description": "Type of font smoothing"
+      },
+      {
+        "name": "Visual Effects - Animations",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\Desktop",
+        "value": "UserPreferencesMask",
+        "type": "REG_BINARY",
+        "description": "Complex binary value controlling visual effects"
+      },
+      {
+        "name": "Show Shadows Under Windows",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+        "value": "ListviewShadow",
+        "type": "REG_DWORD",
+        "values": "1 = Enable, 0 = Disable",
+        "description": "Show shadows under windows"
+      },
+      {
+        "name": "Show Shadows Under Mouse",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+        "value": "ShowInfoTip",
+        "type": "REG_DWORD",
+        "values": "1 = Enable, 0 = Disable",
+        "description": "Show pop-up descriptions for folder items"
+      }
+    ]
+  },
+  {
+    "name": "File Explorer Settings",
+    "settings": [
+      {
+        "name": "Hidden Files",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+        "value": "Hidden",
+        "type": "REG_DWORD",
+        "values": "1 = Show hidden files, 2 = Don't show",
+        "description": "Show/hide hidden files and folders"
+      },
+      {
+        "name": "File Extensions",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+        "value": "HideFileExt",
+        "type": "REG_DWORD",
+        "values": "0 = Show extensions, 1 = Hide extensions",
+        "description": "Show/hide file name extensions"
+      },
+      {
+        "name": "Protected Operating System Files",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+        "value": "ShowSuperHidden",
+        "type": "REG_DWORD",
+        "values": "1 = Show, 0 = Hide",
+        "description": "Show/hide protected OS files"
+      },
+      {
+        "name": "Empty Drives",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+        "value": "HideDrivesWithNoMedia",
+        "type": "REG_DWORD",
+        "values": "0 = Show, 1 = Hide",
+        "description": "Hide empty drives in Computer folder"
+      },
+      {
+        "name": "Navigation Pane - Show All Folders",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+        "value": "NavPaneShowAllFolders",
+        "type": "REG_DWORD",
+        "values": "1 = Show, 0 = Hide",
+        "description": "Show all folders in navigation pane"
+      },
+      {
+        "name": "Navigation Pane - Expand to Open Folder",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+        "value": "NavPaneExpandToCurrentFolder",
+        "type": "REG_DWORD",
+        "values": "1 = Enable, 0 = Disable",
+        "description": "Automatically expand to current folder"
+      },
+      {
+        "name": "Quick Access - Show Recent Files",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer",
+        "value": "ShowRecent",
+        "type": "REG_DWORD",
+        "values": "1 = Show, 0 = Hide",
+        "description": "Show recently used files in Quick Access"
+      },
+      {
+        "name": "Quick Access - Show Frequent Folders",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer",
+        "value": "ShowFrequent",
+        "type": "REG_DWORD",
+        "values": "1 = Show, 0 = Hide",
+        "description": "Show frequently used folders in Quick Access"
+      },
+      {
+        "name": "File Explorer - Open to Quick Access",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+        "value": "LaunchTo",
+        "type": "REG_DWORD",
+        "values": "1 = Quick Access, 2 = This PC",
+        "description": "Default location when opening File Explorer"
+      },
+      {
+        "name": "Check Boxes to Select Items",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+        "value": "AutoCheckSelect",
+        "type": "REG_DWORD",
+        "values": "0 = Disable, 1 = Enable",
+        "description": "Show check boxes for item selection"
+      },
+      {
+        "name": "Item Check Boxes",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+        "value": "UseCheckBoxes",
+        "type": "REG_DWORD",
+        "values": "0 = Disable, 1 = Enable",
+        "description": "Enable check boxes for item selection"
+      },
+      {
+        "name": "File Explorer - View Type",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Streams",
+        "value": "Settings",
+        "type": "REG_BINARY",
+        "description": "Binary value containing view settings (Details, Icons, List, etc.)"
+      },
+      {
+        "name": "Folder Merge Conflicts",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+        "value": "MergeFolderConflicts",
+        "type": "REG_DWORD",
+        "values": "0 = Don't merge, 1 = Merge",
+        "description": "How to handle folder merge conflicts"
+      },
+      {
+        "name": "Sharing Wizard",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+        "value": "SharingWizardOn",
+        "type": "REG_DWORD",
+        "values": "1 = Use, 0 = Don't use",
+        "description": "Use Sharing Wizard for network sharing"
+      },
+      {
+        "name": "Recycle Bin - Delete Confirmation",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+        "value": "ConfirmFileDelete",
+        "type": "REG_DWORD",
+        "values": "0 = No confirmation, 1 = Confirm",
+        "description": "Show delete confirmation dialog"
+      },
+      {
+        "name": "Recycle Bin - Maximum Size",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\BitBucket\\Volume\\{drive_guid}",
+        "value": "MaxCapacity",
+        "type": "REG_DWORD",
+        "description": "Maximum size of Recycle Bin for each drive (percentage)"
+      },
+      {
+        "name": "Recycle Bin - Files Removed Immediately",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\BitBucket\\Volume\\{drive_guid}",
+        "value": "NukeOnDelete",
+        "type": "REG_DWORD",
+        "values": "0 = Send to Recycle Bin, 1 = Remove immediately",
+        "description": "Don't move files to Recycle Bin, delete immediately"
+      },
+      {
+        "name": "Folder Tips",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+        "value": "ShowInfoTip",
+        "type": "REG_DWORD",
+        "values": "1 = Show, 0 = Hide",
+        "description": "Show pop-up descriptions for folder items"
+      },
+      {
+        "name": "Sync Provider Notifications",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+        "value": "ShowSyncProviderNotifications",
+        "type": "REG_DWORD",
+        "values": "1 = Show, 0 = Hide",
+        "description": "Show sync provider notifications (OneDrive, etc.)"
+      },
+      {
+        "name": "File Explorer - Display Size Info",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+        "value": "FolderContentsInfoTip",
+        "type": "REG_DWORD",
+        "values": "1 = Show, 0 = Hide",
+        "description": "Display file size information in folder tips"
+      },
+      {
+        "name": "Encrypted/Compressed Files in Color",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+        "value": "ShowEncryptCompressedColor",
+        "type": "REG_DWORD",
+        "values": "1 = Show, 0 = Hide",
+        "description": "Show encrypted/compressed files in alternate color"
+      },
+      {
+        "name": "Always Show Icons, Never Thumbnails",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+        "value": "IconsOnly",
+        "type": "REG_DWORD",
+        "values": "1 = Always show icons, 0 = Show thumbnails",
+        "description": "Show icons instead of file thumbnails"
+      },
+      {
+        "name": "Display File Icon on Thumbnails",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+        "value": "ShowTypeOverlay",
+        "type": "REG_DWORD",
+        "values": "1 = Show, 0 = Hide",
+        "description": "Display file type icon on thumbnails"
+      },
+      {
+        "name": "Separate Process for Folder Windows",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+        "value": "SeparateProcess",
+        "type": "REG_DWORD",
+        "values": "0 = Disable, 1 = Enable",
+        "description": "Launch folder windows in separate processes"
+      }
+    ]
+  },
+  {
+    "name": "Taskbar & Start Menu",
+    "settings": [
+      {
+        "name": "Taskbar Alignment",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+        "value": "TaskbarAl",
+        "type": "REG_DWORD",
+        "values": "0 = Left, 1 = Center",
+        "description": "Taskbar icon alignment"
+      },
+      {
+        "name": "Taskbar Size (Small/Large Icons)",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+        "value": "TaskbarSmallIcons",
+        "type": "REG_DWORD",
+        "values": "1 = Small icons, 0 = Large icons",
+        "description": "Use small taskbar icons"
+      },
+      {
+        "name": "Taskbar Location on Screen",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StuckRects3",
+        "value": "Settings",
+        "type": "REG_BINARY",
+        "description": "Binary value containing taskbar position (Bottom, Top, Left, Right)"
+      },
+      {
+        "name": "Auto-Hide Taskbar",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StuckRects3",
+        "value": "Settings",
+        "type": "REG_BINARY",
+        "description": "Binary value containing auto-hide setting"
+      },
+      {
+        "name": "Lock Taskbar",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+        "value": "TaskbarSizeMove",
+        "type": "REG_DWORD",
+        "values": "0 = Locked, 1 = Unlocked",
+        "description": "Lock/unlock the taskbar"
+      },
+      {
+        "name": "Taskbar Badges",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+        "value": "TaskbarBadges",
+        "type": "REG_DWORD",
+        "values": "0 = Disable, 1 = Enable",
+        "description": "Show taskbar badges for apps"
+      },
+      {
+        "name": "Taskbar Corner Overflow",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer",
+        "value": "EnableAutoTray",
+        "type": "REG_DWORD",
+        "values": "0 = Show all, 1 = Auto-hide",
+        "description": "Control system tray icon behavior"
+      },
+      {
+        "name": "Taskbar Widgets",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+        "value": "TaskbarDa",
+        "type": "REG_DWORD",
+        "values": "1 = Show, 0 = Hide",
+        "description": "Show widgets button on taskbar"
+      },
+      {
+        "name": "Taskbar Chat Icon",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+        "value": "TaskbarMn",
+        "type": "REG_DWORD",
+        "values": "1 = Show, 0 = Hide",
+        "description": "Show chat icon (Microsoft Teams) on taskbar"
+      },
+      {
+        "name": "Taskbar Task View Button",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+        "value": "ShowTaskViewButton",
+        "type": "REG_DWORD",
+        "values": "1 = Show, 0 = Hide",
+        "description": "Show Task View button on taskbar"
+      },
+      {
+        "name": "Taskbar People Button",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+        "value": "PeopleBand",
+        "type": "REG_DWORD",
+        "values": "1 = Show, 0 = Hide",
+        "description": "Show People button on taskbar"
+      },
+      {
+        "name": "Taskbar Search Box",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Search",
+        "value": "SearchboxTaskbarMode",
+        "type": "REG_DWORD",
+        "values": "0 = Hidden, 1 = Search icon, 2 = Search box",
+        "description": "Control search box appearance on taskbar"
+      },
+      {
+        "name": "Taskbar Corner Icons - Pen Menu",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\PenWorkspace",
+        "value": "PenWorkspaceButtonDesiredVisibility",
+        "type": "REG_DWORD",
+        "values": "1 = Show, 0 = Hide",
+        "description": "Show pen menu icon in system tray"
+      },
+      {
+        "name": "Taskbar Corner Icons - Touch Keyboard",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\CPSS\\TouchKeyboard",
+        "value": "Cornervisibility",
+        "type": "REG_DWORD",
+        "values": "1 = Show, 0 = Hide",
+        "description": "Show touch keyboard icon in system tray"
+      },
+      {
+        "name": "Taskbar Corner Icons - Virtual Touchpad",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\CPSS\\TouchPad",
+        "value": "Cornervisibility",
+        "type": "REG_DWORD",
+        "values": "1 = Show, 0 = Hide",
+        "description": "Show virtual touchpad icon in system tray"
+      },
+      {
+        "name": "Combine Taskbar Buttons",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+        "value": "TaskbarGlomLevel",
+        "type": "REG_DWORD",
+        "values": "0 = Always combine, 1 = Combine when full, 2 = Never combine",
+        "description": "Control how taskbar buttons are grouped"
+      },
+      {
+        "name": "Multiple Displays - Show Taskbar on All Displays",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+        "value": "MMTaskbarEnabled",
+        "type": "REG_DWORD",
+        "values": "0 = Main display only, 1 = All displays",
+        "description": "Show taskbar on all displays"
+      },
+      {
+        "name": "Multiple Displays - Where to Show Buttons",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+        "value": "MMTaskbarMode",
+        "type": "REG_DWORD",
+        "values": "0 = All taskbars, 1 = Main taskbar, 2 = Taskbar where window is open",
+        "description": "Control where taskbar buttons appear on multiple displays"
+      },
+      {
+        "name": "Multiple Displays - Combine Buttons on Other Taskbars",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+        "value": "MMTaskbarGlomLevel",
+        "type": "REG_DWORD",
+        "values": "Same as TaskbarGlomLevel",
+        "description": "Button combining behavior on secondary taskbars"
+      },
+      {
+        "name": "Start Menu - Show Recently Added Apps",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+        "value": "Start_NotifyNewApps",
+        "type": "REG_DWORD",
+        "values": "1 = Show, 0 = Hide",
+        "description": "Highlight newly installed apps in Start menu"
+      },
+      {
+        "name": "Start Menu - Show Most Used Apps",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+        "value": "Start_TrackProgs",
+        "type": "REG_DWORD",
+        "values": "1 = Show, 0 = Hide",
+        "description": "Show most used apps in Start menu"
+      },
+      {
+        "name": "Start Menu - Show Suggestions",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+        "value": "SystemPaneSuggestionsEnabled",
+        "type": "REG_DWORD",
+        "values": "1 = Enable, 0 = Disable",
+        "description": "Show app suggestions in Start menu"
+      },
+      {
+        "name": "Start Menu - Show Recently Opened Items",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+        "value": "Start_TrackDocs",
+        "type": "REG_DWORD",
+        "values": "1 = Show, 0 = Hide",
+        "description": "Show recently opened items in Start menu"
+      },
+      {
+        "name": "Start Menu - Size",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+        "value": "Start_LargeMetroView",
+        "type": "REG_DWORD",
+        "values": "0 = Small, 1 = Large",
+        "description": "Control Start menu size"
+      },
+      {
+        "name": "Start Menu Layout XML",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\CloudStore\\Store\\Cache\\DefaultAccount\\$$start.layout\\Current",
+        "value": "Data",
+        "type": "REG_BINARY",
+        "description": "Binary data containing Start menu layout configuration"
+      },
+      {
+        "name": "Pinned Taskbar Apps",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Taskband",
+        "value": "Favorites",
+        "type": "REG_BINARY",
+        "description": "Binary list of pinned taskbar applications"
+      },
+      {
+        "name": "Pinned Start Menu Apps",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartPage2",
+        "value": "Favorites",
+        "type": "REG_BINARY",
+        "description": "Binary list of pinned Start menu items"
+      }
+    ]
+  },
+  {
+    "name": "Power Settings",
+    "settings": [
+      {
+        "name": "Active Power Plan",
+        "hive": "HKEY_LOCAL_MACHINE",
+        "key": "SYSTEM\\CurrentControlSet\\Control\\Power\\User\\PowerSchemes",
+        "value": "ActivePowerScheme",
+        "type": "REG_SZ",
+        "format": "GUID (e.g., 381b4222-f694-41f0-9685-ff5bb260df2e)",
+        "description": "GUID of currently active power plan"
+      },
+      {
+        "name": "Power Plan GUIDs Reference",
+        "balanced": "381b4222-f694-41f0-9685-ff5bb260df2e",
+        "power saver": "a1841308-3541-4fab-bc81-f71556f20b4a",
+        "high performance": "8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c",
+        "ultimate performance": "e9a42b02-d5df-448d-aa00-03f14749eb61"
+      },
+      {
+        "name": "Monitor Timeout (Plugged In)",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\PowerCfg\\PowerPolicies",
+        "value": "VideoTimeoutAC",
+        "type": "REG_DWORD",
+        "unit": "Minutes",
+        "description": "Minutes before monitor turns off when plugged in"
+      },
+      {
+        "name": "Monitor Timeout (On Battery)",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\PowerCfg\\PowerPolicies",
+        "value": "VideoTimeoutDC",
+        "type": "REG_DWORD",
+        "unit": "Minutes",
+        "description": "Minutes before monitor turns off on battery"
+      },
+      {
+        "name": "Sleep Timeout (Plugged In)",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\PowerCfg\\PowerPolicies",
+        "value": "SleepTimeoutAC",
+        "type": "REG_DWORD",
+        "unit": "Minutes",
+        "description": "Minutes before PC sleeps when plugged in"
+      },
+      {
+        "name": "Sleep Timeout (On Battery)",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\PowerCfg\\PowerPolicies",
+        "value": "SleepTimeoutDC",
+        "type": "REG_DWORD",
+        "unit": "Minutes",
+        "description": "Minutes before PC sleeps on battery"
+      },
+      {
+        "name": "Hibernate Timeout (Plugged In)",
+        "hive": "HKEY_LOCAL_MACHINE",
+        "key": "SYSTEM\\CurrentControlSet\\Control\\Power\\PowerSettings\\{238C9FA8-0AAD-41ED-83F4-97BE242C8F20}\\{9d7815a6-7ee4-497e-8888-515a05f02364}",
+        "value": "Attributes (for settings), DefaultPowerSchemeValues for values",
+        "description": "Complex - requires reading subkeys per power scheme"
+      },
+      {
+        "name": "Hibernate Timeout (On Battery)",
+        "hive": "HKEY_LOCAL_MACHINE",
+        "description": "Similar to above, under DC subkey"
+      },
+      {
+        "name": "Lid Close Action (Plugged In)",
+        "hive": "HKEY_LOCAL_MACHINE",
+        "key": "SYSTEM\\CurrentControlSet\\Control\\Power\\User\\PowerSchemes\\{ActivePowerPlan}\\{4f971e89-eebd-4455-a8de-9e59040e7347}\\{5ca83367-6e45-459f-a27b-476b1d01c936}",
+        "value": "ACSettingIndex",
+        "type": "REG_DWORD",
+        "values": "0 = Do nothing, 1 = Sleep, 2 = Hibernate, 3 = Shut down",
+        "description": "Action when laptop lid is closed (plugged in)"
+      },
+      {
+        "name": "Lid Close Action (On Battery)",
+        "hive": "HKEY_LOCAL_MACHINE",
+        "key": "SYSTEM\\CurrentControlSet\\Control\\Power\\User\\PowerSchemes\\{ActivePowerPlan}\\{4f971e89-eebd-4455-a8de-9e59040e7347}\\{5ca83367-6e45-459f-a27b-476b1d01c936}",
+        "value": "DCSettingIndex",
+        "type": "REG_DWORD",
+        "values": "Same as above",
+        "description": "Action when laptop lid is closed (on battery)"
+      },
+      {
+        "name": "Power Button Action (Plugged In)",
+        "hive": "HKEY_LOCAL_MACHINE",
+        "key": "SYSTEM\\CurrentControlSet\\Control\\Power\\User\\PowerSchemes\\{ActivePowerPlan}\\{4f971e89-eebd-4455-a8de-9e59040e7347}\\{7648efa3-dd9c-4e3e-b566-50f929386280}",
+        "value": "ACSettingIndex",
+        "type": "REG_DWORD",
+        "values": "Same as lid close action",
+        "description": "Action when power button pressed (plugged in)"
+      },
+      {
+        "name": "Power Button Action (On Battery)",
+        "hive": "HKEY_LOCAL_MACHINE",
+        "key": "Same as above",
+        "value": "DCSettingIndex",
+        "type": "REG_DWORD",
+        "description": "Action when power button pressed (on battery)"
+      },
+      {
+        "name": "Sleep Button Action (Plugged In)",
+        "hive": "HKEY_LOCAL_MACHINE",
+        "key": "SYSTEM\\CurrentControlSet\\Control\\Power\\User\\PowerSchemes\\{ActivePowerPlan}\\{4f971e89-eebd-4455-a8de-9e59040e7347}\\{96996bc0-ad50-47ec-923b-6f41874dd9eb}",
+        "value": "ACSettingIndex",
+        "type": "REG_DWORD",
+        "description": "Action when sleep button pressed (plugged in)"
+      },
+      {
+        "name": "Sleep Button Action (On Battery)",
+        "hive": "HKEY_LOCAL_MACHINE",
+        "key": "Same as above",
+        "value": "DCSettingIndex",
+        "type": "REG_DWORD",
+        "description": "Action when sleep button pressed (on battery)"
+      },
+      {
+        "name": "Hard Disk Turn Off After (Plugged In)",
+        "hive": "HKEY_LOCAL_MACHINE",
+        "key": "SYSTEM\\CurrentControlSet\\Control\\Power\\User\\PowerSchemes\\{ActivePowerPlan}\\{0012ee47-9041-4b5d-9b77-535fba8b1442}\\{6738e2c4-e8a5-4a42-b16a-e040e769756e}",
+        "value": "ACSettingIndex",
+        "type": "REG_DWORD",
+        "unit": "Minutes (0 = Never)",
+        "description": "Turn off hard disk after (plugged in)"
+      },
+      {
+        "name": "Hard Disk Turn Off After (On Battery)",
+        "hive": "HKEY_LOCAL_MACHINE",
+        "key": "Same as above",
+        "value": "DCSettingIndex",
+        "type": "REG_DWORD",
+        "description": "Turn off hard disk after (on battery)"
+      },
+      {
+        "name": "USB Selective Suspend (Plugged In)",
+        "hive": "HKEY_LOCAL_MACHINE",
+        "key": "SYSTEM\\CurrentControlSet\\Control\\Power\\User\\PowerSchemes\\{ActivePowerPlan}\\{2a737441-1930-4402-8d77-b2bebba308a3}\\{48e6b7a6-50f5-4782-a5d4-53bb8f07e226}",
+        "value": "ACSettingIndex",
+        "type": "REG_DWORD",
+        "values": "0 = Disable, 1 = Enable",
+        "description": "Enable USB selective suspend (plugged in)"
+      },
+      {
+        "name": "USB Selective Suspend (On Battery)",
+        "hive": "HKEY_LOCAL_MACHINE",
+        "key": "Same as above",
+        "value": "DCSettingIndex",
+        "type": "REG_DWORD",
+        "description": "Enable USB selective suspend (on battery)"
+      },
+      {
+        "name": "PCI Express Link State Power Management (Plugged In)",
+        "hive": "HKEY_LOCAL_MACHINE",
+        "key": "SYSTEM\\CurrentControlSet\\Control\\Power\\User\\PowerSchemes\\{ActivePowerPlan}\\{501a4d13-42af-4429-9fd1-a8218c268e20}\\{ee12f906-d277-404b-b6da-e5fa1a576df5}",
+        "value": "ACSettingIndex",
+        "type": "REG_DWORD",
+        "values": "0 = Off, 1 = Moderate, 2 = Maximum",
+        "description": "PCI Express power management (plugged in)"
+      },
+      {
+        "name": "PCI Express Link State Power Management (On Battery)",
+        "hive": "HKEY_LOCAL_MACHINE",
+        "key": "Same as above",
+        "value": "DCSettingIndex",
+        "type": "REG_DWORD",
+        "description": "PCI Express power management (on battery)"
+      },
+      {
+        "name": "Processor Power Management - Minimum State (Plugged In)",
+        "hive": "HKEY_LOCAL_MACHINE",
+        "key": "SYSTEM\\CurrentControlSet\\Control\\Power\\User\\PowerSchemes\\{ActivePowerPlan}\\{54533251-82be-4824-96c1-47b60b740d00}\\{893dee8e-2bef-41e0-89c6-b55d0929964c}",
+        "value": "ACSettingIndex",
+        "type": "REG_DWORD",
+        "range": "0 - 100 (percentage)",
+        "description": "Minimum processor state (plugged in)"
+      },
+      {
+        "name": "Processor Power Management - Minimum State (On Battery)",
+        "hive": "HKEY_LOCAL_MACHINE",
+        "key": "Same as above",
+        "value": "DCSettingIndex",
+        "type": "REG_DWORD",
+        "description": "Minimum processor state (on battery)"
+      },
+      {
+        "name": "Processor Power Management - Maximum State (Plugged In)",
+        "hive": "HKEY_LOCAL_MACHINE",
+        "key": "SYSTEM\\CurrentControlSet\\Control\\Power\\User\\PowerSchemes\\{ActivePowerPlan}\\{54533251-82be-4824-96c1-47b60b740d00}\\{bc5038f7-23e0-4960-96da-33abaf5935ec}",
+        "value": "ACSettingIndex",
+        "type": "REG_DWORD",
+        "range": "0 - 100 (percentage)",
+        "description": "Maximum processor state (plugged in)"
+      },
+      {
+        "name": "Processor Power Management - Maximum State (On Battery)",
+        "hive": "HKEY_LOCAL_MACHINE",
+        "key": "Same as above",
+        "value": "DCSettingIndex",
+        "type": "REG_DWORD",
+        "description": "Maximum processor state (on battery)"
+      },
+      {
+        "name": "Processor Power Management - System Cooling Policy (Plugged In)",
+        "hive": "HKEY_LOCAL_MACHINE",
+        "key": "SYSTEM\\CurrentControlSet\\Control\\Power\\User\\PowerSchemes\\{ActivePowerPlan}\\{54533251-82be-4824-96c1-47b60b740d00}\\{94d3a615-a899-4ac5-ae2b-e4d8f634367f}",
+        "value": "ACSettingIndex",
+        "type": "REG_DWORD",
+        "values": "0 = Passive, 1 = Active",
+        "description": "Cooling policy (plugged in)"
+      },
+      {
+        "name": "Processor Power Management - System Cooling Policy (On Battery)",
+        "hive": "HKEY_LOCAL_MACHINE",
+        "key": "Same as above",
+        "value": "DCSettingIndex",
+        "type": "REG_DWORD",
+        "description": "Cooling policy (on battery)"
+      },
+      {
+        "name": "Display Brightness (Plugged In)",
+        "hive": "HKEY_LOCAL_MACHINE",
+        "key": "SYSTEM\\CurrentControlSet\\Control\\Power\\User\\PowerSchemes\\{ActivePowerPlan}\\{7516b95f-f776-4464-8c53-06167f40cc99}\\{aded5e82-b909-4619-9949-f5d71dac0bcb}",
+        "value": "ACSettingIndex",
+        "type": "REG_DWORD",
+        "range": "0 - 100 (percentage)",
+        "description": "Display brightness (plugged in)"
+      },
+      {
+        "name": "Display Brightness (On Battery)",
+        "hive": "HKEY_LOCAL_MACHINE",
+        "key": "Same as above",
+        "value": "DCSettingIndex",
+        "type": "REG_DWORD",
+        "description": "Display brightness (on battery)"
+      },
+      {
+        "name": "Adaptive Brightness (Plugged In)",
+        "hive": "HKEY_LOCAL_MACHINE",
+        "key": "SYSTEM\\CurrentControlSet\\Control\\Power\\User\\PowerSchemes\\{ActivePowerPlan}\\{7516b95f-f776-4464-8c53-06167f40cc99}\\{fbd9aa66-9553-4097-ba44-ed6e9d65eab8}",
+        "value": "ACSettingIndex",
+        "type": "REG_DWORD",
+        "values": "0 = Disable, 1 = Enable",
+        "description": "Enable adaptive brightness (plugged in)"
+      },
+      {
+        "name": "Adaptive Brightness (On Battery)",
+        "hive": "HKEY_LOCAL_MACHINE",
+        "key": "Same as above",
+        "value": "DCSettingIndex",
+        "type": "REG_DWORD",
+        "description": "Enable adaptive brightness (on battery)"
+      },
+      {
+        "name": "Wireless Adapter Power Saving Mode (Plugged In)",
+        "hive": "HKEY_LOCAL_MACHINE",
+        "key": "SYSTEM\\CurrentControlSet\\Control\\Power\\User\\PowerSchemes\\{ActivePowerPlan}\\{19cbb8fa-5279-450e-9fac-8a3d5fedd0c1}\\{12bbebe6-58d6-4636-95bb-3217ef867c1a}",
+        "value": "ACSettingIndex",
+        "type": "REG_DWORD",
+        "values": "0 = Maximum Performance, 1 = Medium, 2 = Maximum Power Saving",
+        "description": "Wireless adapter power saving (plugged in)"
+      },
+      {
+        "name": "Wireless Adapter Power Saving Mode (On Battery)",
+        "hive": "HKEY_LOCAL_MACHINE",
+        "key": "Same as above",
+        "value": "DCSettingIndex",
+        "type": "REG_DWORD",
+        "description": "Wireless adapter power saving (on battery)"
+      },
+      {
+        "name": "Battery Level to Enter Critical Action",
+        "hive": "HKEY_LOCAL_MACHINE",
+        "key": "SYSTEM\\CurrentControlSet\\Control\\Power\\User\\PowerSchemes\\{ActivePowerPlan}\\{e73a048d-bf27-4f12-9731-8b2076e8891f}\\{9a66d8d7-4ff7-4ef9-b5a2-5a326ca2a469}",
+        "value": "DCSettingIndex",
+        "type": "REG_DWORD",
+        "range": "0 - 100 (percentage)",
+        "description": "Battery level that triggers critical action"
+      },
+      {
+        "name": "Critical Battery Action",
+        "hive": "HKEY_LOCAL_MACHINE",
+        "key": "SYSTEM\\CurrentControlSet\\Control\\Power\\User\\PowerSchemes\\{ActivePowerPlan}\\{e73a048d-bf27-4f12-9731-8b2076e8891f}\\{637ea02f-bbcb-4015-8e2c-a1c7b9c0b546}",
+        "value": "DCSettingIndex",
+        "type": "REG_DWORD",
+        "values": "Same as lid close action",
+        "description": "Action when battery reaches critical level"
+      },
+      {
+        "name": "Low Battery Level",
+        "hive": "HKEY_LOCAL_MACHINE",
+        "key": "SYSTEM\\CurrentControlSet\\Control\\Power\\User\\PowerSchemes\\{ActivePowerPlan}\\{e73a048d-bf27-4f12-9731-8b2076e8891f}\\{8183ba9a-e910-48da-8769-14ae6dc1170a}",
+        "value": "DCSettingIndex",
+        "type": "REG_DWORD",
+        "range": "0 - 100 (percentage)",
+        "description": "Battery level considered \"low\""
+      },
+      {
+        "name": "Low Battery Notification",
+        "hive": "HKEY_LOCAL_MACHINE",
+        "key": "SYSTEM\\CurrentControlSet\\Control\\Power\\User\\PowerSchemes\\{ActivePowerPlan}\\{e73a048d-bf27-4f12-9731-8b2076e8891f}\\{bcded951-187b-4d05-bccc-f7e51960c258}",
+        "value": "DCSettingIndex",
+        "type": "REG_DWORD",
+        "values": "0 = Off, 1 = On",
+        "description": "Show notification when battery is low"
+      },
+      {
+        "name": "Low Battery Action",
+        "hive": "HKEY_LOCAL_MACHINE",
+        "key": "SYSTEM\\CurrentControlSet\\Control\\Power\\User\\PowerSchemes\\{ActivePowerPlan}\\{e73a048d-bf27-4f12-9731-8b2076e8891f}\\{d8742dcb-3e6a-4b3c-b3fe-374623cdcf06}",
+        "value": "DCSettingIndex",
+        "type": "REG_DWORD",
+        "values": "Same as lid close action",
+        "description": "Action when battery reaches low level"
+      },
+      {
+        "name": "Reserve Battery Level",
+        "hive": "HKEY_LOCAL_MACHINE",
+        "key": "SYSTEM\\CurrentControlSet\\Control\\Power\\User\\PowerSchemes\\{ActivePowerPlan}\\{e73a048d-bf27-4f12-9731-8b2076e8891f}\\{f3f50225-6c77-4c6a-8356-ebc6a5f9d4f5}",
+        "value": "DCSettingIndex",
+        "type": "REG_DWORD",
+        "range": "0 - 100 (percentage)",
+        "description": "Reserve battery level (hibernation file reserve)"
+      },
+      {
+        "name": "Hibernate After (Battery)",
+        "hive": "HKEY_LOCAL_MACHINE",
+        "key": "SYSTEM\\CurrentControlSet\\Control\\Power\\User\\PowerSchemes\\{ActivePowerPlan}\\{238C9FA8-0AAD-41ED-83F4-97BE242C8F20}\\{9d7815a6-7ee4-497e-8888-515a05f02364}",
+        "value": "DCSettingIndex",
+        "type": "REG_DWORD",
+        "unit": "Minutes",
+        "description": "Hibernate after (on battery)"
+      },
+      {
+        "name": "Hibernate After (Plugged In)",
+        "hive": "HKEY_LOCAL_MACHINE",
+        "key": "Same as above",
+        "value": "ACSettingIndex",
+        "type": "REG_DWORD",
+        "description": "Hibernate after (plugged in)"
+      },
+      {
+        "name": "Allow Hybrid Sleep (Plugged In)",
+        "hive": "HKEY_LOCAL_MACHINE",
+        "key": "SYSTEM\\CurrentControlSet\\Control\\Power\\User\\PowerSchemes\\{ActivePowerPlan}\\{238C9FA8-0AAD-41ED-83F4-97BE242C8F20}\\{94ac6d29-73ce-41a6-809f-6363ba21b47e}",
+        "value": "ACSettingIndex",
+        "type": "REG_DWORD",
+        "values": "0 = Disable, 1 = Enable",
+        "description": "Allow hybrid sleep (plugged in)"
+      },
+      {
+        "name": "Allow Hybrid Sleep (On Battery)",
+        "hive": "HKEY_LOCAL_MACHINE",
+        "key": "Same as above",
+        "value": "DCSettingIndex",
+        "type": "REG_DWORD",
+        "description": "Allow hybrid sleep (on battery)"
+      },
+      {
+        "name": "Allow Wake Timers (Plugged In)",
+        "hive": "HKEY_LOCAL_MACHINE",
+        "key": "SYSTEM\\CurrentControlSet\\Control\\Power\\User\\PowerSchemes\\{ActivePowerPlan}\\{238C9FA8-0AAD-41ED-83F4-97BE242C8F20}\\{bd3b718a-0680-4d9d-8ab2-e1d2b4ac806d}",
+        "value": "ACSettingIndex",
+        "type": "REG_DWORD",
+        "values": "0 = Disable, 1 = Enable, 2 = Important timers only",
+        "description": "Allow wake timers (plugged in)"
+      },
+      {
+        "name": "Allow Wake Timers (On Battery)",
+        "hive": "HKEY_LOCAL_MACHINE",
+        "key": "Same as above",
+        "value": "DCSettingIndex",
+        "type": "REG_DWORD",
+        "description": "Allow wake timers (on battery)"
+      }
+    ]
+  },
+  {
+    "name": "Privacy Settings",
+    "settings": [
+      {
+        "name": "Camera Access",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\webcam",
+        "value": "Value",
+        "type": "REG_SZ",
+        "values": "Allow = Allowed, Deny = Denied",
+        "description": "Allow apps to access camera"
+      },
+      {
+        "name": "Microphone Access",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\microphone",
+        "value": "Value",
+        "type": "REG_SZ",
+        "values": "Allow = Allowed, Deny = Denied",
+        "description": "Allow apps to access microphone"
+      },
+      {
+        "name": "Location Access",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\location",
+        "value": "Value",
+        "type": "REG_SZ",
+        "values": "Allow = Allowed, Deny = Denied",
+        "description": "Allow apps to access location"
+      },
+      {
+        "name": "Notifications Access",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\userNotificationListener",
+        "value": "Value",
+        "type": "REG_SZ",
+        "values": "Allow = Allowed, Deny = Denied",
+        "description": "Allow apps to read notifications"
+      },
+      {
+        "name": "Account Info Access",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\userAccountInformation",
+        "value": "Value",
+        "type": "REG_SZ",
+        "values": "Allow = Allowed, Deny = Denied",
+        "description": "Allow apps to access account info"
+      },
+      {
+        "name": "Contacts Access",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\contacts",
+        "value": "Value",
+        "type": "REG_SZ",
+        "values": "Allow = Allowed, Deny = Denied",
+        "description": "Allow apps to access contacts"
+      },
+      {
+        "name": "Calendar Access",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\appointments",
+        "value": "Value",
+        "type": "REG_SZ",
+        "values": "Allow = Allowed, Deny = Denied",
+        "description": "Allow apps to access calendar"
+      },
+      {
+        "name": "Call History Access",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\phoneCall",
+        "value": "Value",
+        "type": "REG_SZ",
+        "values": "Allow = Allowed, Deny = Denied",
+        "description": "Allow apps to access call history"
+      },
+      {
+        "name": "Email Access",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\email",
+        "value": "Value",
+        "type": "REG_SZ",
+        "values": "Allow = Allowed, Deny = Denied",
+        "description": "Allow apps to access email"
+      },
+      {
+        "name": "Messaging Access",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\chat",
+        "value": "Value",
+        "type": "REG_SZ",
+        "values": "Allow = Allowed, Deny = Denied",
+        "description": "Allow apps to read/send messages"
+      },
+      {
+        "name": "Radio Access (Bluetooth/Wi-Fi)",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\radios",
+        "value": "Value",
+        "type": "REG_SZ",
+        "values": "Allow = Allowed, Deny = Denied",
+        "description": "Allow apps to control radios"
+      },
+      {
+        "name": "App Diagnostics Access",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\appDiagnostics",
+        "value": "Value",
+        "type": "REG_SZ",
+        "values": "Allow = Allowed, Deny = Denied",
+        "description": "Allow apps to access diagnostic info"
+      },
+      {
+        "name": "Documents Access",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\documentsLibrary",
+        "value": "Value",
+        "type": "REG_SZ",
+        "values": "Allow = Allowed, Deny = Denied",
+        "description": "Allow apps to access Documents folder"
+      },
+      {
+        "name": "Pictures Access",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\picturesLibrary",
+        "value": "Value",
+        "type": "REG_SZ",
+        "values": "Allow = Allowed, Deny = Denied",
+        "description": "Allow apps to access Pictures folder"
+      },
+      {
+        "name": "Videos Access",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\videosLibrary",
+        "value": "Value",
+        "type": "REG_SZ",
+        "values": "Allow = Allowed, Deny = Denied",
+        "description": "Allow apps to access Videos folder"
+      },
+      {
+        "name": "File System Access (Broad)",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\broadFileSystemAccess",
+        "value": "Value",
+        "type": "REG_SZ",
+        "values": "Allow = Allowed, Deny = Denied",
+        "description": "Allow apps to access entire file system"
+      },
+      {
+        "name": "Telemetry Level",
+        "hive": "HKEY_LOCAL_MACHINE",
+        "key": "SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection",
+        "value": "AllowTelemetry",
+        "type": "REG_DWORD",
+        "values": "0 = Security, 1 = Basic, 3 = Full",
+        "description": "Diagnostic data collection level"
+      },
+      {
+        "name": "Telemetry (Alternative Location)",
+        "hive": "HKEY_LOCAL_MACHINE",
+        "key": "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\DataCollection",
+        "value": "AllowTelemetry",
+        "type": "REG_DWORD",
+        "values": "Same as above",
+        "description": "Alternative location for telemetry setting"
+      },
+      {
+        "name": "Advertising ID",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\AdvertisingInfo",
+        "value": "Enabled",
+        "type": "REG_DWORD",
+        "values": "1 = Enable, 0 = Disable",
+        "description": "Allow apps to use advertising ID"
+      },
+      {
+        "name": "Advertising ID (Policy)",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\AdvertisingInfo",
+        "value": "ID",
+        "type": "REG_SZ",
+        "description": "The actual advertising ID (GUID)"
+      },
+      {
+        "name": "Activity History",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Privacy",
+        "value": "ActivityHistoryEnabled",
+        "type": "REG_DWORD",
+        "values": "1 = Enable, 0 = Disable",
+        "description": "Store activity history on this device"
+      },
+      {
+        "name": "Publish Activity to Timeline",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Privacy",
+        "type": "REG_DWORD",
+        "values": "1 = Enable, 0 = Disable",
+        "description": "Let Windows collect my activities from this PC"
+      },
+      {
+        "name": "Collect Activity on Cloud",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Privacy",
+        "value": "UploadUserActivities",
+        "type": "REG_DWORD",
+        "values": "1 = Enable, 0 = Disable",
+        "description": "Upload activity history to Microsoft"
+      },
+      {
+        "name": "Suggested Content in Settings",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+        "value": "SubscribedContent-338387Enabled",
+        "type": "REG_DWORD",
+        "values": "1 = Enable, 0 = Disable",
+        "description": "Show suggested content in Settings app"
+      },
+      {
+        "name": "Tailored Experiences",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Privacy",
+        "value": "TailoredExperiencesWithDiagnosticDataEnabled",
+        "type": "REG_DWORD",
+        "values": "1 = Enable, 0 = Disable",
+        "description": "Let Microsoft use diagnostic data for tailored experiences"
+      },
+      {
+        "name": "Inking & Typing Personalization",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\InputPersonalization",
+        "value": "RestrictImplicitTextCollection",
+        "type": "REG_DWORD",
+        "values": "0 = Enable, 1 = Disable",
+        "description": "Inking & typing data collection"
+      },
+      {
+        "name": "Inking & Typing Dictionary",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\InputPersonalization",
+        "value": "RestrictImplicitInkCollection",
+        "type": "REG_DWORD",
+        "values": "0 = Enable, 1 = Disable",
+        "description": "Inking data collection"
+      },
+      {
+        "name": "Find My Device",
+        "hive": "HKEY_LOCAL_MACHINE",
+        "key": "SOFTWARE\\Microsoft\\Settings\\FindMyDevice",
+        "value": "LocationSyncEnabled",
+        "type": "REG_DWORD",
+        "values": "1 = Enable, 0 = Disable",
+        "description": "Find My Device feature"
+      },
+      {
+        "name": "Camera Access for Desktop Apps",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\webcam\\NonPackaged",
+        "value": "Value",
+        "type": "REG_SZ",
+        "values": "Allow = Allowed, Deny = Denied",
+        "description": "Camera access for traditional desktop apps"
+      },
+      {
+        "name": "Microphone Access for Desktop Apps",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\microphone\\NonPackaged",
+        "value": "Value",
+        "type": "REG_SZ",
+        "values": "Allow = Allowed, Deny = Denied",
+        "description": "Microphone access for traditional desktop apps"
+      },
+      {
+        "name": "Location Access for Desktop Apps",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\location\\NonPackaged",
+        "value": "Value",
+        "type": "REG_SZ",
+        "values": "Allow = Allowed, Deny = Denied",
+        "description": "Location access for traditional desktop apps"
+      },
+      {
+        "name": "Let Apps Use Camera Hardware",
+        "hive": "HKEY_LOCAL_MACHINE",
+        "key": "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\webcam",
+        "value": "Value",
+        "type": "REG_SZ",
+        "description": "Global camera access setting"
+      },
+      {
+        "name": "Let Apps Use Microphone Hardware",
+        "hive": "HKEY_LOCAL_MACHINE",
+        "key": "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\microphone",
+        "value": "Value",
+        "type": "REG_SZ",
+        "description": "Global microphone access setting"
+      },
+      {
+        "name": "Feedback Frequency",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Siuf\\Rules",
+        "value": "NumberOfSIUFInPeriod",
+        "type": "REG_DWORD",
+        "values": "0 = Never, 1 = Automatically, etc.",
+        "description": "How often Windows asks for feedback"
+      }
+    ]
+  },
+  {
+    "name": "Mouse & Keyboard Settings",
+    "settings": [
+      {
+        "name": "Mouse - Primary Button",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\Mouse",
+        "value": "SwapMouseButtons",
+        "type": "REG_SZ",
+        "values": "0 = Left-handed (primary right), 1 = Right-handed (primary left)",
+        "description": "Swap primary mouse button"
+      },
+      {
+        "name": "Mouse - Double-Click Speed",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\Mouse",
+        "value": "DoubleClickSpeed",
+        "type": "REG_SZ",
+        "range": "400 (fast) - 900 (slow) milliseconds",
+        "description": "Double-click speed threshold"
+      },
+      {
+        "name": "Mouse - Double-Click Height",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\Mouse",
+        "value": "DoubleClickHeight",
+        "type": "REG_SZ",
+        "description": "Vertical tolerance for double-click (pixels)"
+      },
+      {
+        "name": "Mouse - Double-Click Width",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\Mouse",
+        "value": "DoubleClickWidth",
+        "type": "REG_SZ",
+        "description": "Horizontal tolerance for double-click (pixels)"
+      },
+      {
+        "name": "Mouse - Scroll Lines",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\Desktop",
+        "value": "WheelScrollLines",
+        "type": "REG_SZ",
+        "values": "-1 = One screen, 0 = No scrolling, 1-100 = Number of lines",
+        "description": "Lines to scroll per mouse wheel notch"
+      },
+      {
+        "name": "Mouse - Scroll Wheel Delta",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\Desktop",
+        "type": "REG_SZ",
+        "description": "Characters to scroll horizontally per wheel notch"
+      },
+      {
+        "name": "Mouse - Snap to Default Button",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\Mouse",
+        "value": "SnapToDefaultButton",
+        "type": "REG_SZ",
+        "values": "0 = Off, 1 = On",
+        "description": "Automatically move mouse to default dialog button"
+      },
+      {
+        "name": "Mouse - Mouse Speed",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\Mouse",
+        "value": "MouseSpeed",
+        "type": "REG_SZ",
+        "values": "0 = Slow, 1 = Medium, 2 = Fast",
+        "description": "Mouse cursor speed (pointer speed)"
+      },
+      {
+        "name": "Mouse - Mouse Threshold 1",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\Mouse",
+        "value": "MouseThreshold1",
+        "type": "REG_SZ",
+        "description": "Mouse acceleration threshold 1"
+      },
+      {
+        "name": "Mouse - Mouse Threshold 2",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\Mouse",
+        "value": "MouseThreshold2",
+        "type": "REG_SZ",
+        "description": "Mouse acceleration threshold 2"
+      },
+      {
+        "name": "Mouse - Enhance Pointer Precision",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\Mouse",
+        "value": "MouseSensitivity",
+        "type": "REG_SZ",
+        "values": "1-20 (higher = more precise)",
+        "description": "Mouse sensitivity/pointer precision"
+      },
+      {
+        "name": "Mouse - Cursor Scheme",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\Cursors",
+        "value": "(Default)",
+        "type": "REG_SZ",
+        "values": "Windows Default, Windows Black, Windows Inverted, etc.",
+        "description": "Mouse cursor scheme"
+      },
+      {
+        "name": "Mouse - Cursor Paths",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\Cursors",
+        "values": "Arrow, Hand, Wait, AppStarting, etc.",
+        "type": "REG_SZ",
+        "description": "Paths to individual cursor files"
+      },
+      {
+        "name": "Keyboard - Repeat Delay",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\Keyboard",
+        "value": "KeyboardDelay",
+        "type": "REG_SZ",
+        "values": "0 = Short (fast repeat), 3 = Long (slow repeat)",
+        "description": "Delay before keyboard repeat starts"
+      },
+      {
+        "name": "Keyboard - Repeat Rate",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\Keyboard",
+        "value": "KeyboardSpeed",
+        "type": "REG_SZ",
+        "values": "0 = Slow, 31 = Fast",
+        "description": "Keyboard repeat rate (characters per second)"
+      },
+      {
+        "name": "Touchpad - Tap to Click",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\PrecisionTouchPad",
+        "value": "TapEnabled",
+        "type": "REG_DWORD",
+        "values": "0 = Disable, 1 = Enable",
+        "description": "Tap touchpad to click"
+      },
+      {
+        "name": "Touchpad - Double-Tap to Drag",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\PrecisionTouchPad",
+        "value": "TapAndHoldEnabled",
+        "type": "REG_DWORD",
+        "values": "0 = Disable, 1 = Enable",
+        "description": "Double-tap and drag on touchpad"
+      },
+      {
+        "name": "Touchpad - Right-Click Zone",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\PrecisionTouchPad",
+        "value": "RightClickZoneEnabled",
+        "type": "REG_DWORD",
+        "values": "0 = Disable, 1 = Enable",
+        "description": "Press bottom-right corner for right-click"
+      },
+      {
+        "name": "Touchpad - Scrolling Direction",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\PrecisionTouchPad",
+        "value": "ScrollDirection",
+        "type": "REG_DWORD",
+        "values": "0 = Down motion scrolls down, 1 = Down motion scrolls up",
+        "description": "Touchpad scrolling direction"
+      },
+      {
+        "name": "Touchpad - Sensitivity",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\PrecisionTouchPad",
+        "value": "CursorSpeed",
+        "type": "REG_DWORD",
+        "range": "0 - 4 (higher = more sensitive)",
+        "description": "Touchpad cursor speed"
+      },
+      {
+        "name": "Touchpad - Three-Finger Gestures",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\PrecisionTouchPad",
+        "value": "ThreeFingerTapEnabled",
+        "type": "REG_DWORD",
+        "values": "0 = Disable, 1 = Enable (Cortana), 2 = Enable (Action Center), 3 = Enable (Play/Pause), 4 = Enable (Middle Click)",
+        "description": "Three-finger tap gesture"
+      },
+      {
+        "name": "Touchpad - Four-Finger Gestures",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\PrecisionTouchPad",
+        "value": "FourFingerTapEnabled",
+        "type": "REG_DWORD",
+        "values": "0 = Disable, 1 = Enable (Action Center), 2 = Enable (Play/Pause), 3 = Enable (Cortana)",
+        "description": "Four-finger tap gesture"
+      },
+      {
+        "name": "Touchpad - Swipe Gestures",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\PrecisionTouchPad",
+        "value": "SwipeGestureEnabled",
+        "type": "REG_DWORD",
+        "values": "0 = Disable, 1 = Enable",
+        "description": "Enable three-finger swipes for multitasking"
+      }
+    ]
+  },
+  {
+    "name": "Regional & Language Settings",
+    "settings": [
+      {
+        "name": "Date Format - Short Date",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\International",
+        "value": "sShortDate",
+        "type": "REG_SZ",
+        "example": "MM/dd/yyyy, dd/MM/yyyy, yyyy-MM-dd",
+        "description": "Short date format"
+      },
+      {
+        "name": "Date Format - Long Date",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\International",
+        "value": "sLongDate",
+        "type": "REG_SZ",
+        "example": "dddd, MMMM dd, yyyy",
+        "description": "Long date format"
+      },
+      {
+        "name": "Time Format",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\International",
+        "value": "sTimeFormat",
+        "type": "REG_SZ",
+        "values": "HH:mm:ss = 24-hour, h:mm:ss tt = 12-hour",
+        "description": "Time format (12/24 hour)"
+      },
+      {
+        "name": "Time Format with AM/PM",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\International",
+        "value": "sTime",
+        "type": "REG_SZ",
+        "description": "Time separator and format"
+      },
+      {
+        "name": "AM Designator",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\International",
+        "value": "sAM",
+        "type": "REG_SZ",
+        "example": "AM, a.m.",
+        "description": "AM designator string"
+      },
+      {
+        "name": "PM Designator",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\International",
+        "value": "sPM",
+        "type": "REG_SZ",
+        "example": "PM, p.m.",
+        "description": "PM designator string"
+      },
+      {
+        "name": "First Day of Week",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\International",
+        "value": "iFirstDayOfWeek",
+        "type": "REG_SZ",
+        "values": "0 = Monday, 1 = Tuesday, 2 = Wednesday, 3 = Thursday, 4 = Friday, 5 = Saturday, 6 = Sunday",
+        "description": "First day of the week"
+      },
+      {
+        "name": "Decimal Symbol",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\International",
+        "value": "sDecimal",
+        "type": "REG_SZ",
+        "values": ". or ,",
+        "description": "Decimal separator symbol"
+      },
+      {
+        "name": "Thousand Separator",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\International",
+        "value": "sThousand",
+        "type": "REG_SZ",
+        "values": ",, .,   (space)",
+        "description": "Digit grouping/thousands separator"
+      },
+      {
+        "name": "List Separator",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\International",
+        "value": "sList",
+        "type": "REG_SZ",
+        "values": ",, ;",
+        "description": "List item separator"
+      },
+      {
+        "name": "Currency Symbol",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\International",
+        "value": "sCurrency",
+        "type": "REG_SZ",
+        "example": "$, \u20ac, \u00a3, \u00a5",
+        "description": "Local currency symbol"
+      },
+      {
+        "name": "Currency Positive Format",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\International",
+        "value": "iCurrency",
+        "type": "REG_SZ",
+        "values": "0 = $1, 1 = 1$, 2 = $ 1, 3 = 1 $",
+        "description": "Positive currency format"
+      },
+      {
+        "name": "Currency Negative Format",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\International",
+        "value": "iNegCurr",
+        "type": "REG_SZ",
+        "description": "Negative currency format (0-15)"
+      },
+      {
+        "name": "Number of Decimal Digits",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\International",
+        "value": "iDigits",
+        "type": "REG_SZ",
+        "range": "0 - 3",
+        "description": "Number of decimal digits"
+      },
+      {
+        "name": "Leading Zeros",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\International",
+        "value": "iLZero",
+        "type": "REG_SZ",
+        "values": "0 = No leading zeros, 1 = Show leading zeros",
+        "description": "Show leading zeros in decimal numbers"
+      },
+      {
+        "name": "Measurement System",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\International",
+        "value": "iMeasure",
+        "type": "REG_SZ",
+        "values": "0 = Metric, 1 = US",
+        "description": "Measurement system (Metric/US)"
+      },
+      {
+        "name": "Time Zone",
+        "hive": "HKEY_LOCAL_MACHINE",
+        "key": "SYSTEM\\CurrentControlSet\\Control\\TimeZoneInformation",
+        "value": "TimeZoneKeyName",
+        "type": "REG_SZ",
+        "example": "Eastern Standard Time, Pacific Standard Time",
+        "description": "Windows time zone name"
+      },
+      {
+        "name": "Daylight Saving Time Enabled",
+        "hive": "HKEY_LOCAL_MACHINE",
+        "key": "SYSTEM\\CurrentControlSet\\Control\\TimeZoneInformation",
+        "value": "DynamicDaylightTimeDisabled",
+        "type": "REG_DWORD",
+        "values": "0 = Enable, 1 = Disable",
+        "description": "Automatically adjust for daylight saving"
+      },
+      {
+        "name": "Country/Region",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\International\\Geo",
+        "value": "Nation",
+        "type": "REG_SZ",
+        "example": "US, CA, GB",
+        "description": "Country/region code"
+      }
+    ]
+  },
+  {
+    "name": "Accessibility Settings",
+    "settings": [
+      {
+        "name": "Narrator - Auto Start",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Narrator\\NoRoam",
+        "value": "NarratorAutoStart",
+        "type": "REG_DWORD",
+        "values": "1 = Enable, 0 = Disable",
+        "description": "Start Narrator automatically"
+      },
+      {
+        "name": "Narrator - Voice",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Narrator\\NoRoam",
+        "value": "CurrentVoice",
+        "type": "REG_SZ",
+        "description": "Narrator voice selection"
+      },
+      {
+        "name": "Narrator - Speed",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Narrator\\NoRoam",
+        "value": "SpeechRate",
+        "type": "REG_DWORD",
+        "range": "0 - 15 (higher = faster)",
+        "description": "Narrator speech rate"
+      },
+      {
+        "name": "Narrator - Volume",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Narrator\\NoRoam",
+        "value": "SpeechVolume",
+        "type": "REG_DWORD",
+        "range": "0 - 100",
+        "description": "Narrator volume"
+      },
+      {
+        "name": "Magnifier - Zoom Level",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\ScreenMagnifier",
+        "value": "Magnification",
+        "type": "REG_DWORD",
+        "range": "100 - 1600 (percentage)",
+        "description": "Magnifier zoom level"
+      },
+      {
+        "name": "Magnifier - Follow Focus",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\ScreenMagnifier",
+        "value": "FollowFocus",
+        "type": "REG_DWORD",
+        "values": "1 = Enable, 0 = Disable",
+        "description": "Magnifier follows keyboard focus"
+      },
+      {
+        "name": "Magnifier - Follow Mouse",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\ScreenMagnifier",
+        "value": "FollowMouse",
+        "type": "REG_DWORD",
+        "values": "1 = Enable, 0 = Disable",
+        "description": "Magnifier follows mouse cursor"
+      },
+      {
+        "name": "Magnifier - Follow Caret",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\ScreenMagnifier",
+        "value": "FollowCaret",
+        "type": "REG_DWORD",
+        "values": "1 = Enable, 0 = Disable",
+        "description": "Magnifier follows text insertion point"
+      },
+      {
+        "name": "Magnifier - Docked Mode",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\ScreenMagnifier",
+        "value": "WindowMode",
+        "type": "REG_DWORD",
+        "values": "1 = Full screen, 2 = Lens, 3 = Docked",
+        "description": "Magnifier view mode"
+      },
+      {
+        "name": "High Contrast - Enable",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\Accessibility\\HighContrast",
+        "value": "Flags",
+        "type": "REG_SZ",
+        "values": "126 = On, 122 = Off",
+        "description": "Enable high contrast mode"
+      },
+      {
+        "name": "High Contrast - Theme",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\Accessibility\\HighContrast",
+        "value": "High Contrast Scheme",
+        "type": "REG_SZ",
+        "example": "High Contrast #1, High Contrast #2",
+        "description": "High contrast color scheme"
+      },
+      {
+        "name": "Sticky Keys",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\Accessibility\\StickyKeys",
+        "value": "Flags",
+        "type": "REG_SZ",
+        "values": "506 = On, 58 = Off",
+        "description": "Enable Sticky Keys (press one key at a time for shortcuts)"
+      },
+      {
+        "name": "Filter Keys",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\Accessibility\\Keyboard Response",
+        "value": "Flags",
+        "type": "REG_SZ",
+        "values": "122 = On, 58 = Off",
+        "description": "Enable Filter Keys (ignore brief/repeated keystrokes)"
+      },
+      {
+        "name": "Toggle Keys",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\Accessibility\\ToggleKeys",
+        "value": "Flags",
+        "type": "REG_SZ",
+        "values": "62 = On, 58 = Off",
+        "description": "Hear tones when pressing Caps Lock, Num Lock, Scroll Lock"
+      },
+      {
+        "name": "Mouse Keys",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\Accessibility\\MouseKeys",
+        "value": "Flags",
+        "type": "REG_SZ",
+        "values": "159 = On, 126 = Off",
+        "description": "Control mouse with keyboard numpad"
+      },
+      {
+        "name": "Mouse Keys - Speed",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\Accessibility\\MouseKeys",
+        "value": "MouseSpeed",
+        "type": "REG_SZ",
+        "description": "Mouse Keys cursor speed"
+      },
+      {
+        "name": "Mouse Keys - Acceleration",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\Accessibility\\MouseKeys",
+        "value": "MouseTimeToMaxSpeed",
+        "type": "REG_SZ",
+        "description": "Time to reach maximum Mouse Keys speed"
+      },
+      {
+        "name": "Closed Captions",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Accessibility\\Configuration",
+        "value": "ClosedCaptioning",
+        "type": "REG_DWORD",
+        "values": "1 = Enable, 0 = Disable",
+        "description": "Enable closed captions"
+      },
+      {
+        "name": "Caption Color",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows NT\\CurrentVersion\\Accessibility\\Caption",
+        "value": "CaptionTextColor",
+        "type": "REG_DWORD",
+        "description": "Closed caption text color"
+      },
+      {
+        "name": "Caption Background Color",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows NT\\CurrentVersion\\Accessibility\\Caption",
+        "value": "CaptionBackgroundColor",
+        "type": "REG_DWORD",
+        "description": "Closed caption background color"
+      },
+      {
+        "name": "Caption Font Size",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows NT\\CurrentVersion\\Accessibility\\Caption",
+        "value": "CaptionFontSize",
+        "type": "REG_DWORD",
+        "description": "Closed caption font size"
+      },
+      {
+        "name": "Visual Notifications for Sound",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\Accessibility\\SoundSentry",
+        "value": "Flags",
+        "type": "REG_SZ",
+        "values": "2 = Flash active window, 6 = Flash desktop, etc.",
+        "description": "Show visual alerts for sounds (Sound Sentry)"
+      },
+      {
+        "name": "Text Cursor - Thickness",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\Desktop",
+        "value": "CaretWidth",
+        "type": "REG_DWORD",
+        "range": "1 - 5 (pixels)",
+        "description": "Text cursor (caret) width"
+      },
+      {
+        "name": "Text Cursor - Blink Rate",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\Desktop",
+        "value": "CursorBlinkRate",
+        "type": "REG_SZ",
+        "range": "200 - 1200 (milliseconds)",
+        "description": "Cursor blink rate (lower = faster)"
+      }
+    ]
+  },
+  {
+    "name": "Gaming Settings",
+    "settings": [
+      {
+        "name": "Game Mode",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\GameBar",
+        "value": "AllowAutoGameMode",
+        "type": "REG_DWORD",
+        "values": "1 = Enable, 0 = Disable",
+        "description": "Enable Windows Game Mode"
+      },
+      {
+        "name": "Game Bar - Enable",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\GameBar",
+        "value": "ShowStartupPanel",
+        "type": "REG_DWORD",
+        "values": "1 = Enable, 0 = Disable",
+        "description": "Enable Game Bar"
+      },
+      {
+        "name": "Game Bar - Shortcut",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\GameBar",
+        "value": "UseNexusForGameBar",
+        "type": "REG_DWORD",
+        "description": "Use Nexus for Game Bar"
+      },
+      {
+        "name": "Game Bar - Controller Shortcut",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\GameBar",
+        "value": "GamingMsguiEnabled",
+        "type": "REG_DWORD",
+        "values": "1 = Enable, 0 = Disable",
+        "description": "Open Game Bar with Xbox button on controller"
+      },
+      {
+        "name": "Captures - Record in Background",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\GameDVR",
+        "value": "HistoricalCaptureEnabled",
+        "type": "REG_DWORD",
+        "values": "1 = Enable, 0 = Disable",
+        "description": "Record in background while playing"
+      },
+      {
+        "name": "Captures - Max Recording Length",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\GameDVR",
+        "type": "REG_DWORD",
+        "description": "Maximum background recording length"
+      },
+      {
+        "name": "Captures - Audio Quality",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\GameDVR",
+        "value": "AudioEncodingBitrate",
+        "type": "REG_DWORD",
+        "description": "Audio bitrate for game captures"
+      },
+      {
+        "name": "Captures - Video Quality",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\GameDVR",
+        "value": "VideoEncodingBitrate",
+        "type": "REG_DWORD",
+        "description": "Video bitrate for game captures"
+      },
+      {
+        "name": "Captures - Framerate",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\GameDVR",
+        "value": "VideoEncodingFrameRateMode",
+        "type": "REG_DWORD",
+        "description": "Capture framerate (30/60 fps)"
+      },
+      {
+        "name": "Captures - Save Location",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\GameDVR",
+        "value": "CaptureRootDirectory",
+        "type": "REG_SZ",
+        "description": "Folder path for game captures"
+      },
+      {
+        "name": "TruePlay (Anti-Cheat)",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\GameBar",
+        "value": "UseTruePlay",
+        "type": "REG_DWORD",
+        "values": "1 = Enable, 0 = Disable",
+        "description": "Enable TruePlay anti-cheat for games"
+      }
+    ]
+  },
+  {
+    "name": "System & Performance",
+    "settings": [
+      {
+        "name": "Visual Effects - Adjust for Best Performance",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\VisualEffects",
+        "value": "VisualFXSetting",
+        "type": "REG_DWORD",
+        "values": "0 = Let Windows choose, 1 = Best appearance, 2 = Best performance, 3 = Custom",
+        "description": "Visual effects performance setting"
+      },
+      {
+        "name": "Show Windows Contents While Dragging",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\Desktop",
+        "value": "DragFullWindows",
+        "type": "REG_SZ",
+        "values": "0 = Disable, 1 = Enable",
+        "description": "Show window contents while dragging"
+      },
+      {
+        "name": "Smooth Edges of Screen Fonts",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\Desktop",
+        "value": "FontSmoothing",
+        "type": "REG_SZ",
+        "values": "0 = Disable, 2 = Enable",
+        "description": "Smooth edges of screen fonts (ClearType)"
+      },
+      {
+        "name": "Animate Controls and Elements",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Control Panel\\Desktop",
+        "value": "UserPreferencesMask",
+        "type": "REG_BINARY",
+        "description": "Complex binary - controls various animation settings"
+      },
+      {
+        "name": "Show Shadows Under Mouse",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+        "value": "ShowInfoTip",
+        "type": "REG_DWORD",
+        "values": "1 = Enable, 0 = Disable",
+        "description": "Show shadows under mouse pointer"
+      },
+      {
+        "name": "Show Thumbnails Instead of Icons",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+        "value": "IconsOnly",
+        "type": "REG_DWORD",
+        "values": "0 = Show thumbnails, 1 = Show icons only",
+        "description": "Always show icons, never thumbnails"
+      },
+      {
+        "name": "Save Taskbar Thumbnail Previews",
+        "hive": "HKEY_CURRENT_USER",
+        "key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+        "value": "TaskbarThumbnails",
+        "type": "REG_DWORD",
+        "values": "0 = Disable, 1 = Enable",
+        "description": "Show taskbar thumbnail previews"
+      },
+      {
+        "name": "Virtual Memory Size",
+        "hive": "HKEY_LOCAL_MACHINE",
+        "key": "SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management",
+        "value": "PagingFiles",
+        "type": "REG_MULTI_SZ",
+        "example": "C:\\pagefile.sys 1024 4096 (initial max)",
+        "description": "Page file configuration"
+      },
+      {
+        "name": "Disable Pagefile",
+        "hive": "HKEY_LOCAL_MACHINE",
+        "key": "SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management",
+        "value": "DisablePagingExecutive",
+        "type": "REG_DWORD",
+        "values": "0 = Enable, 1 = Disable",
+        "description": "Disable pagefile for system executables"
+      },
+      {
+        "name": "Large System Cache",
+        "hive": "HKEY_LOCAL_MACHINE",
+        "key": "SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management",
+        "value": "LargeSystemCache",
+        "type": "REG_DWORD",
+        "values": "0 = Disable, 1 = Enable",
+        "description": "Use large system cache (server optimization)"
+      },
+      {
+        "name": "Processor Scheduling - Programs/Background",
+        "hive": "HKEY_LOCAL_MACHINE",
+        "key": "SYSTEM\\CurrentControlSet\\Control\\PriorityControl",
+        "value": "Win32PrioritySeparation",
+        "type": "REG_DWORD",
+        "description": "Control foreground/background process priority"
+      },
+      {
+        "name": "DEP (Data Execution Prevention)",
+        "hive": "HKEY_LOCAL_MACHINE",
+        "key": "SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management",
+        "value": "ExecuteOptions",
+        "type": "REG_DWORD",
+        "values": "0 = OptIn, 1 = OptOut, 2 = AlwaysOn, 3 = AlwaysOff",
+        "description": "DEP configuration"
+      },
+      {
+        "name": "\u26a0\ufe0f Safety Warnings"
+      },
+      {
+        "name": "\ud83d\udd04 Windows Version Compatibility"
+      },
+      {
+        "name": "\ud83d\udcc2 Registry Hive Reference"
+      },
+      {
+        "name": "\ud83d\udcbe Export Format Example (JSON)"
+      }
+    ]
+  }
+]

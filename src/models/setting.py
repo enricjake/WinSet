@@ -164,3 +164,44 @@ class RegistrySetting(Setting):
             "is_expanded": self.is_expanded
         })
         return base_dict
+@dataclass
+class PowerSetting(Setting):
+    """Setting for Windows Power Plans"""
+    _: KW_ONLY
+    plan_guid: str
+
+    def __post_init__(self):
+        if self.setting_type != SettingType.POWER:
+            object.__setattr__(self, 'setting_type', SettingType.POWER)
+
+    def apply(self) -> bool:
+        from src.core.powershell_handler import PowerShellHandler
+        ps = PowerShellHandler()
+        success, _ = ps.set_power_plan(self.plan_guid)
+        self.is_applied = success
+        return success
+
+
+@dataclass
+class ServiceSetting(Setting):
+    """Setting for Windows Services"""
+    _: KW_ONLY
+    service_name: str
+    startup_type: str = "Disabled" # Disabled, Manual, Automatic
+
+    def __post_init__(self):
+        if self.setting_type != SettingType.SYSTEM:
+            object.__setattr__(self, 'setting_type', SettingType.SYSTEM)
+
+    def apply(self) -> bool:
+        from src.core.powershell_handler import PowerShellHandler
+        ps = PowerShellHandler()
+        if self.startup_type == "Disabled":
+            success, _ = ps.disable_service(self.service_name)
+        else:
+            # Add more service methods to PowerShellHandler if needed
+            command = f"Set-Service -Name '{self.service_name}' -StartupType {self.startup_type}"
+            success, _ = ps.run_command(command)
+        
+        self.is_applied = success
+        return success

@@ -15,6 +15,7 @@ from src.presets.preset_manager import PresetManager
 from src.utils.backup_manager import BackupManager
 from src.core.registry_handler import RegistryHandler
 from src.core.powershell_handler import PowerShellHandler
+from src.core.setting_loader import SettingLoader
 from src.models.setting import RegistrySetting, SettingCategory, SettingType
 
 class MainWindow:
@@ -36,6 +37,7 @@ class MainWindow:
         self.backup_manager = BackupManager()
         self.registry_handler = RegistryHandler()
         self.powershell_handler = PowerShellHandler()
+        self.setting_loader = SettingLoader()
         
         self._create_menu()
         self._create_toolbar()
@@ -205,21 +207,12 @@ Get started by choosing an option below:"""
         
         # Checkboxes for categories
         self.category_vars = {}
-        categories = [
-            "🎨 System Appearance",
-            "📁 File Explorer",
-            "🖱️ Taskbar & Start",
-            "⚡ Power Settings",
-            "🔒 Privacy Options",
-            "⌨️ Keyboard & Mouse",
-            "🌐 Network Settings",
-            "🔧 Advanced Settings"
-        ]
         
-        for i, cat in enumerate(categories):
+        for i, category in enumerate(self.setting_loader.get_categories()):
+            cat_display = f"{category.value.upper().replace('_', ' ')}"
             var = tk.BooleanVar(value=True)
-            self.category_vars[cat] = var
-            ttk.Checkbutton(categories_frame, text=cat, variable=var).grid(
+            self.category_vars[category] = var
+            ttk.Checkbutton(categories_frame, text=cat_display, variable=var).grid(
                 row=i//2, column=i%2, sticky=tk.W, padx=20, pady=5
             )
         
@@ -322,95 +315,103 @@ Get started by choosing an option below:"""
         btn.pack(anchor=tk.E)
         
     def _create_manual_tab(self):
-        """Create manual configuration tab with dynamic registry settings."""
-        ttk.Label(self.manual_frame, text="Manual Configuration", font=("Arial", 16)).pack(pady=10)
+        """Create manual configuration tab with categorization."""
+        ttk.Label(self.manual_frame, text="Manual Configuration", font=("Arial", 16, "bold")).pack(pady=10)
         
-        canvas = tk.Canvas(self.manual_frame)
-        scrollbar = ttk.Scrollbar(self.manual_frame, orient="vertical", command=canvas.yview)
-        scrollable_frame = ttk.Frame(canvas)
+        # Search/Filter frame
+        filter_frame = ttk.Frame(self.manual_frame)
+        filter_frame.pack(fill=tk.X, padx=10, pady=5)
+        ttk.Label(filter_frame, text="Search:").pack(side=tk.LEFT, padx=5)
+        self.search_var = tk.StringVar()
+        self.search_var.trace_add("write", lambda *args: self.refresh_manual_config())
+        ttk.Entry(filter_frame, textvariable=self.search_var).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
+
+        # Main scrollable area
+        container = ttk.Frame(self.manual_frame)
+        container.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
         
-        scrollable_frame.bind(
+        self.manual_canvas = tk.Canvas(container)
+        scrollbar = ttk.Scrollbar(container, orient="vertical", command=self.manual_canvas.yview)
+        self.manual_scrollable_frame = ttk.Frame(self.manual_canvas)
+        
+        self.manual_scrollable_frame.bind(
             "<Configure>",
-            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+            lambda e: self.manual_canvas.configure(scrollregion=self.manual_canvas.bbox("all"))
         )
         
-        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
+        self.manual_canvas.create_window((0, 0), window=self.manual_scrollable_frame, anchor="nw")#, width=self.manual_canvas.winfo_width())
+        self.manual_canvas.configure(yscrollcommand=scrollbar.set)
         
-        # Define some sample manual settings based on docs/registry_keys.md
-        manual_settings = [
-            {
-                "name": "Show Hidden Files",
-                "desc": "Show hidden files and folders in File Explorer",
-                "hive": "HKEY_CURRENT_USER",
-                "path": "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
-                "key": "Hidden",
-                "type": "REG_DWORD",
-                "on_val": 1,
-                "off_val": 2
-            },
-            {
-                "name": "Show File Extensions",
-                "desc": "Show file name extensions for known file types",
-                "hive": "HKEY_CURRENT_USER",
-                "path": "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
-                "key": "HideFileExt",
-                "type": "REG_DWORD",
-                "on_val": 0,
-                "off_val": 1
-            },
-            {
-                "name": "Dark Mode (Apps)",
-                "desc": "Use dark theme for applications",
-                "hive": "HKEY_CURRENT_USER",
-                "path": "Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",
-                "key": "AppsUseLightTheme",
-                "type": "REG_DWORD",
-                "on_val": 0,
-                "off_val": 1
-            },
-            {
-                "name": "Dark Mode (System)",
-                "desc": "Use dark theme for taskbar and start menu",
-                "hive": "HKEY_CURRENT_USER",
-                "path": "Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",
-                "key": "SystemUsesLightTheme",
-                "type": "REG_DWORD",
-                "on_val": 0,
-                "off_val": 1
-            }
-        ]
-        
-        for config in manual_settings:
-            frame = ttk.LabelFrame(scrollable_frame, text=config["name"], padding=10)
-            frame.pack(fill=tk.X, pady=5, padx=10)
-            
-            ttk.Label(frame, text=config["desc"], foreground="gray").pack(anchor=tk.W)
-            
-            # Read current value to set initial state
-            current_val = self.registry_handler.read_value(config["hive"], config["path"], config["key"])
-            is_on = (current_val == config["on_val"]) if current_val is not None else False
-            
-            var = tk.BooleanVar(value=is_on)
-            
-            def toggle_setting(c=config, v=var):
-                val = c["on_val"] if v.get() else c["off_val"]
-                success = self.registry_handler.write_value(
-                    c["hive"], c["path"], c["key"], c["type"], val
-                )
-                if not success:
-                    messagebox.showerror("Error", f"Failed to set {c['name']}")
-                    v.set(not v.get()) # Revert checkbox
-
-            ttk.Checkbutton(
-                frame, 
-                text="Enable", 
-                variable=var, 
-                command=toggle_setting
-            ).pack(anchor=tk.W, pady=5)
-            
-        canvas.pack(side="left", fill="both", expand=True, padx=5)
+        self.manual_canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
+        
+        # Initial population
+        self.refresh_manual_config()
+
+    def refresh_manual_config(self):
+        """Populate or refresh the manual config list based on filter."""
+        # Clear existing
+        for widget in self.manual_scrollable_frame.winfo_children():
+            widget.destroy()
+            
+        search_query = self.search_var.get().lower()
+        
+        # Store checkbox vars to track state
+        self.manual_vars = {} 
+
+        for category in self.setting_loader.get_categories():
+            settings = self.setting_loader.get_settings_for_category(category)
+            
+            # Filter settings
+            filtered_settings = [s for s in settings if search_query in s.name.lower() or search_query in (s.description or "").lower()]
+            
+            if not filtered_settings:
+                continue
+                
+            # Category Header
+            cat_frame = ttk.LabelFrame(self.manual_scrollable_frame, text=f"📂 {category.value.upper().replace('_', ' ')}", padding=5)
+            cat_frame.pack(fill=tk.X, pady=10, padx=5)
+            
+            for setting in filtered_settings:
+                s_frame = ttk.Frame(cat_frame)
+                s_frame.pack(fill=tk.X, pady=2)
+                
+                # Check if it should be toggled on (live registry read)
+                current_val = self.registry_handler.read_value(setting.hive, setting.key_path, setting.value_name)
+                
+                # Simplified toggle check
+                is_on = False
+                if setting.value_type == "REG_DWORD":
+                    is_on = (current_val == 1)
+                elif setting.value_type == "REG_SZ":
+                    # Some strings are "1"/"0" or "Enabled"/"Disabled"
+                    is_on = str(current_val).lower() in ["1", "enabled", "yes", "on"]
+                
+                var = tk.BooleanVar(value=is_on)
+                self.manual_vars[setting.id] = (setting, var)
+                
+                def toggle_command(s=setting, v=var):
+                    # Defaulting to 1/0 for most toggles
+                    new_val = 1 if v.get() else 0
+                    if s.value_type == "REG_SZ":
+                        new_val = "1" if v.get() else "0"
+                        
+                    success = self.registry_handler.write_value(
+                        s.hive, s.key_path, s.value_name, s.value_type, new_val
+                    )
+                    if success:
+                        self.status_label.config(text=f"Updated: {s.name}")
+                    else:
+                        messagebox.showerror("Error", f"Failed to update {s.name}")
+                        v.set(not v.get())
+                
+                check = ttk.Checkbutton(s_frame, text=setting.name, variable=var, command=toggle_command)
+                check.pack(side=tk.LEFT)
+                
+                if setting.description:
+                    help_label = ttk.Label(s_frame, text=" (?)", foreground="blue", cursor="hand2")
+                    help_label.pack(side=tk.LEFT)
+                    help_label.bind("<Button-1>", lambda e, s=setting: messagebox.showinfo(s.name, s.description))
 
     def _create_status_bar(self):
         """Create status bar at bottom"""
@@ -441,26 +442,23 @@ Get started by choosing an option below:"""
         if not file_path:
             return
             
-        settings = []
-        # Since manual config tab isn't fully wired yet, we use a placeholder setting 
-        # just to prove the exporter can work, but you'd normally extract checked items here.
-        settings.append(
-             RegistrySetting(
-                 id="test_export",
-                 name="Test Export Node",
-                 description="A sample setting to test the exporter.",
-                 category=SettingCategory.SYSTEM,
-                 setting_type=SettingType.REGISTRY,
-                 value=0,
-                 default_value=0,
-                 hive="HKEY_CURRENT_USER",
-                 key_path="SOFTWARE\\WinSet\\Test",
-                 value_name="ExportTest",
-                 value_type="REG_DWORD"
-             )
-        )
+        settings_to_export = []
+        # If we have manual settings toggled/indexed, use those. 
+        # For now, let's export all settings that have been explicitly identified in manual_vars
+        if hasattr(self, 'manual_vars'):
+            for setting_id, (setting, var) in self.manual_vars.items():
+                if var.get(): # If "on", export it
+                    # Update setting value from live registry
+                    current_val = self.registry_handler.read_value(setting.hive, setting.key_path, setting.value_name)
+                    setting.value = current_val
+                    settings_to_export.append(setting)
+
+        if not settings_to_export:
+            # Fallback to a default set if nothing is selected manually
+            messagebox.showwarning("No Selection", "Please check at least one setting in 'Manual Config' to export.")
+            return
         
-        success = self.exporter.export_profile(settings, file_path, profile_name="WinSet Manual Export")
+        success = self.exporter.export_profile(settings_to_export, file_path, profile_name="WinSet Custom Export")
         if success:
             messagebox.showinfo("Export Successful", f"Profile successfully exported to:\n{file_path}")
         else:
@@ -557,13 +555,34 @@ Created with ❤️ for the Windows community"""
             var.set(False)
             
     def export_selected(self):
-        selected = [cat for cat, var in self.category_vars.items() if var.get()]
-        if not selected:
+        """Export settings for selected categories."""
+        selected_categories = [cat for cat, var in self.category_vars.items() if var.get()]
+        if not selected_categories:
             messagebox.showwarning("No Selection", "Please select at least one category to export.")
             return
         
-        # In a complete implementation we would fetch dynamic RegistrySettings mapped to these categories here
-        self.export_settings()
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".json",
+            filetypes=[("JSON files", "*.json")],
+            title="Export Selected Categories"
+        )
+        if not file_path:
+            return
+
+        settings_to_export = []
+        for category in selected_categories:
+            cat_settings = self.setting_loader.get_settings_for_category(category)
+            for setting in cat_settings:
+                # Read live value
+                current_val = self.registry_handler.read_value(setting.hive, setting.key_path, setting.value_name)
+                setting.value = current_val
+                settings_to_export.append(setting)
+        
+        success = self.exporter.export_profile(settings_to_export, file_path, profile_name="WinSet Category Export")
+        if success:
+            messagebox.showinfo("Export Successful", f"Exported {len(settings_to_export)} settings across {len(selected_categories)} categories.")
+        else:
+            messagebox.showerror("Export Failed", "There was an error exporting the profile.")
 
 # For testing
 if __name__ == "__main__":

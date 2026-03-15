@@ -4,7 +4,7 @@ import hashlib
 from typing import Dict, Any, Tuple
 
 from src.models.profile import Profile
-from src.models.setting import RegistrySetting, SettingCategory, SettingType
+from src.models.setting import RegistrySetting, PowerSetting, ServiceSetting, SettingCategory, SettingType
 from src.core.registry_handler import RegistryHandler
 
 class ProfileImporter:
@@ -12,6 +12,14 @@ class ProfileImporter:
 
     def __init__(self):
         self.registry = RegistryHandler()
+        from src.core.setting_loader import SettingLoader
+        self.loader = SettingLoader()
+        self._master_settings = {}
+        # Flatten settings from categories for easy lookup
+        for cat in self.loader.get_categories():
+            for s in self.loader.get_settings_for_category(cat):
+                self._master_settings[s.name.lower()] = s
+                self._master_settings[s.id.lower()] = s
 
     def _verify_checksum(self, data: dict) -> bool:
         """Verifies the integrity of the profile data using the checksum."""
@@ -37,34 +45,88 @@ class ProfileImporter:
             with open(file_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
 
-            if not self._verify_checksum(data):
+            if "checksum" in data and not self._verify_checksum(data):
                 return False, "Profile integrity check failed. The file may have been tampered with or corrupted.", None
 
             # Reconstruct the profile object
             profile = Profile.import_from_dict(data)
             
-            # Reconstruct settings objects (we bypassed this in the dataclass model for simplicity, so we do it here)
+            # Reconstruct settings objects
             settings_data = data.get("settings", {})
             for sid, sdata in settings_data.items():
-                if sdata.get("type") == SettingType.REGISTRY.value:
-                    setting = RegistrySetting(
-                        id=sdata["id"],
-                        name=sdata["name"],
-                        description=sdata["description"],
-                        category=SettingCategory(sdata["category"]),
-                        setting_type=SettingType(sdata["type"]),
-                        value=sdata["value"],
-                        default_value=None, # Not explicitly tracked in exports
-                        requires_admin=sdata.get("requires_admin", False),
-                        requires_restart=sdata.get("requires_restart", False),
-                        hive=sdata["hive"],
-                        key_path=sdata["key_path"],
-                        value_name=sdata["value_name"],
-                        value_type=sdata["value_type"],
-                        is_expanded=sdata.get("is_expanded", False)
-                    )
+                setting = None
+                
+                # Check if this is a standard rich setting or a simplified preset setting
+                is_rich = isinstance(sdata, dict) and "type" in sdata
+                
+                if is_rich:
+                    if sdata.get("type") == SettingType.REGISTRY.value:
+                        setting = RegistrySetting(
+                            id=sdata["id"],
+                            name=sdata["name"],
+                            description=sdata["description"],
+                            category=SettingCategory(sdata["category"]),
+                            setting_type=SettingType(sdata["type"]),
+                            value=sdata["value"],
+                            default_value=None,
+                            requires_admin=sdata.get("requires_admin", False),
+                            requires_restart=sdata.get("requires_restart", False),
+                            hive=sdata["hive"],
+                            key_path=sdata["key_path"],
+                            value_name=sdata["value_name"],
+                            value_type=sdata["value_type"],
+                            is_expanded=sdata.get("is_expanded", False)
+                        )
+                    elif sdata.get("type") == SettingType.POWER.value:
+                        setting = PowerSetting(
+                            id=sdata["id"],
+                            name=sdata["name"],
+                            description=sdata["description"],
+                            category=SettingCategory(sdata["category"]),
+                            setting_type=SettingType(sdata["type"]),
+                            value=sdata["value"],
+                            default_value=None,
+                            plan_guid=sdata.get("plan_guid", "")
+                        )
+                    elif sdata.get("type") == SettingType.SYSTEM.value and "service_name" in sdata:
+                        setting = ServiceSetting(
+                            id=sdata["id"],
+                            name=sdata["name"],
+                            description=sdata["description"],
+                            category=SettingCategory(sdata["category"]),
+                            setting_type=SettingType(sdata["type"]),
+                            value=sdata["value"],
+                            default_value=None,
+                            service_name=sdata["service_name"],
+                            startup_type=sdata.get("startup_type", "Disabled")
+                        )
+                else:
+                    # Hydrate from master settings
+                    # Sid is often the ID or Name
+                    lookup_key = sid.lower()
+                    master = self._master_settings.get(lookup_key) or self._master_settings.get(lookup_key.replace("_", " "))
+                    
+                    if master:
+                        value = sdata.get("value") if isinstance(sdata, dict) else sdata
+                        # Create appropriate type based on master
+                        if isinstance(master, RegistrySetting):
+                            setting = RegistrySetting(
+                                id=master.id,
+                                name=master.name,
+                                description=master.description,
+                                category=master.category,
+                                setting_type=master.setting_type,
+                                value=value,
+                                default_value=master.default_value,
+                                hive=master.hive,
+                                key_path=master.key_path,
+                                value_name=master.value_name,
+                                value_type=master.value_type
+                            )
+                        # Handle other master types here if needed
+                
+                if setting:
                     profile.add_setting(setting)
-                # Other types would go here...
 
             return True, "Profile loaded successfully.", profile
 
