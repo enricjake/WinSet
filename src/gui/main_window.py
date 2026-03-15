@@ -8,10 +8,13 @@ import sys
 import os
 
 # Import managers
+# Import managers
 from src.storage.exporter import ProfileExporter
 from src.storage.importer import ProfileImporter
 from src.presets.preset_manager import PresetManager
 from src.utils.backup_manager import BackupManager
+from src.core.registry_handler import RegistryHandler
+from src.core.powershell_handler import PowerShellHandler
 from src.models.setting import RegistrySetting, SettingCategory, SettingType
 
 class MainWindow:
@@ -31,6 +34,8 @@ class MainWindow:
         self.importer = ProfileImporter()
         self.exporter = ProfileExporter()
         self.backup_manager = BackupManager()
+        self.registry_handler = RegistryHandler()
+        self.powershell_handler = PowerShellHandler()
         
         self._create_menu()
         self._create_toolbar()
@@ -125,7 +130,10 @@ class MainWindow:
         self.notebook.add(self.presets_frame, text="⚡ Presets")
         self._create_presets_tab()
         
-        # Categories will be added dynamically later
+        # Manual Config tab
+        self.manual_frame = ttk.Frame(self.notebook)
+        self.notebook.add(self.manual_frame, text="⚙️ Manual Config")
+        self._create_manual_tab()
         
     def _create_welcome_tab(self):
         """Create welcome screen content"""
@@ -313,6 +321,97 @@ Get started by choosing an option below:"""
         )
         btn.pack(anchor=tk.E)
         
+    def _create_manual_tab(self):
+        """Create manual configuration tab with dynamic registry settings."""
+        ttk.Label(self.manual_frame, text="Manual Configuration", font=("Arial", 16)).pack(pady=10)
+        
+        canvas = tk.Canvas(self.manual_frame)
+        scrollbar = ttk.Scrollbar(self.manual_frame, orient="vertical", command=canvas.yview)
+        scrollable_frame = ttk.Frame(canvas)
+        
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+        
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+        
+        # Define some sample manual settings based on docs/registry_keys.md
+        manual_settings = [
+            {
+                "name": "Show Hidden Files",
+                "desc": "Show hidden files and folders in File Explorer",
+                "hive": "HKEY_CURRENT_USER",
+                "path": "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+                "key": "Hidden",
+                "type": "REG_DWORD",
+                "on_val": 1,
+                "off_val": 2
+            },
+            {
+                "name": "Show File Extensions",
+                "desc": "Show file name extensions for known file types",
+                "hive": "HKEY_CURRENT_USER",
+                "path": "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+                "key": "HideFileExt",
+                "type": "REG_DWORD",
+                "on_val": 0,
+                "off_val": 1
+            },
+            {
+                "name": "Dark Mode (Apps)",
+                "desc": "Use dark theme for applications",
+                "hive": "HKEY_CURRENT_USER",
+                "path": "Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",
+                "key": "AppsUseLightTheme",
+                "type": "REG_DWORD",
+                "on_val": 0,
+                "off_val": 1
+            },
+            {
+                "name": "Dark Mode (System)",
+                "desc": "Use dark theme for taskbar and start menu",
+                "hive": "HKEY_CURRENT_USER",
+                "path": "Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",
+                "key": "SystemUsesLightTheme",
+                "type": "REG_DWORD",
+                "on_val": 0,
+                "off_val": 1
+            }
+        ]
+        
+        for config in manual_settings:
+            frame = ttk.LabelFrame(scrollable_frame, text=config["name"], padding=10)
+            frame.pack(fill=tk.X, pady=5, padx=10)
+            
+            ttk.Label(frame, text=config["desc"], foreground="gray").pack(anchor=tk.W)
+            
+            # Read current value to set initial state
+            current_val = self.registry_handler.read_value(config["hive"], config["path"], config["key"])
+            is_on = (current_val == config["on_val"]) if current_val is not None else False
+            
+            var = tk.BooleanVar(value=is_on)
+            
+            def toggle_setting(c=config, v=var):
+                val = c["on_val"] if v.get() else c["off_val"]
+                success = self.registry_handler.write_value(
+                    c["hive"], c["path"], c["key"], c["type"], val
+                )
+                if not success:
+                    messagebox.showerror("Error", f"Failed to set {c['name']}")
+                    v.set(not v.get()) # Revert checkbox
+
+            ttk.Checkbutton(
+                frame, 
+                text="Enable", 
+                variable=var, 
+                command=toggle_setting
+            ).pack(anchor=tk.W, pady=5)
+            
+        canvas.pack(side="left", fill="both", expand=True, padx=5)
+        scrollbar.pack(side="right", fill="y")
+
     def _create_status_bar(self):
         """Create status bar at bottom"""
         self.status_bar = ttk.Frame(self.root, relief=tk.SUNKEN, padding=2)
@@ -428,7 +527,7 @@ Get started by choosing an option below:"""
         messagebox.showinfo("Settings", "Settings dialog coming soon!")
         
     def open_manual(self):
-        messagebox.showinfo("Manual Config", "Manual configuration coming soon!")
+        self.notebook.select(self.manual_frame)
         
     def open_docs(self):
         import webbrowser
