@@ -1,7 +1,7 @@
 import json
 import os
-from typing import List, Dict
-from src.models.setting import RegistrySetting, SettingCategory, SettingType
+from typing import List, Dict, Optional
+from src.models.setting import RegistrySetting, SettingCategory, SettingType, Setting
 
 class SettingLoader:
     """Loads settings from resources/settings.json"""
@@ -12,12 +12,18 @@ class SettingLoader:
         "Taskbar & Start Menu": SettingCategory.TASKBAR,
         "Power Settings": SettingCategory.POWER,
         "Privacy Options": SettingCategory.PRIVACY,
+        "Privacy Settings": SettingCategory.PRIVACY,
         "Keyboard & Mouse": SettingCategory.KEYBOARD,
+        "Mouse & Keyboard Settings": SettingCategory.KEYBOARD,
+        "Regional & Language Settings": SettingCategory.SYSTEM,
+        "Accessibility Settings": SettingCategory.SYSTEM,
+        "Gaming Settings": SettingCategory.SYSTEM,
+        "System & Performance": SettingCategory.SYSTEM,
         "Network Settings": SettingCategory.NETWORK,
         "Advanced Settings": SettingCategory.SYSTEM
     }
 
-    def __init__(self, resource_path: str = None):
+    def __init__(self, resource_path: Optional[str] = None):
         if resource_path is None:
             base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
             self.resource_path = os.path.join(base_dir, "resources", "settings.json")
@@ -62,6 +68,9 @@ class SettingLoader:
                     # Store the values field if present
                     if "values" in s_data:
                         setting.values = s_data["values"]
+                    elif "range" in s_data:
+                        setting.values = s_data["range"]
+                        setting.is_range = True
                     
                     self.settings_by_category[enum_cat].append(setting)
                 except Exception as e:

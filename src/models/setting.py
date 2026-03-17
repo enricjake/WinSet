@@ -7,6 +7,7 @@ from typing import Any, Optional, Dict
 from enum import Enum
 from datetime import datetime
 
+import winreg
 
 class SettingType(Enum):
     """Type of setting"""
@@ -81,6 +82,7 @@ class RegistrySetting(Setting):
     # Optional fields with defaults
     is_expanded: bool = False  # For REG_EXPAND_SZ
     options: Optional[Dict[str, Any]] = None  # For multi-value settings (dropdown options)
+    is_range: bool = False  # For slider ranges
 
     def __post_init__(self):
         """Validate after initialization"""

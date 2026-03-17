@@ -8,6 +8,7 @@ import sys
 import os
 import threading
 import time
+from typing import Optional, Dict, Any, List
 
 # Import managers
 from src.storage.exporter import ProfileExporter
@@ -23,7 +24,28 @@ from src.models.setting import RegistrySetting, SettingCategory, SettingType
 class MainWindow:
     """Main application window with professional configuration tool design"""
     
-    def __init__(self, root):
+    def __init__(self, root: tk.Tk):
+        self.root = root
+        self.root.title("WinSet - Windows Configuration Toolkit")
+        
+        # Missing attribute declarations
+        self.bg_color: str = ""
+        self.fg_color: str = ""
+        self.accent_color: str = ""
+        self.border_color: str = ""
+        self.main_frame: Optional[ttk.Frame] = None
+        self.notebook: Optional[ttk.Notebook] = None
+        self.home_frame: Optional[ttk.Frame] = None
+        self.presets_frame: Optional[ttk.Frame] = None
+        self.manual_frame: Optional[ttk.Frame] = None
+        self.status_frame: Optional[ttk.Frame] = None
+        self.status_label: Optional[ttk.Label] = None
+        self.progress_bar: Optional[ttk.Progressbar] = None
+        self.search_var: Optional[tk.StringVar] = None
+        self.manual_canvas: Optional[tk.Canvas] = None
+        self.manual_scrollable: Optional[ttk.Frame] = None
+        self.manual_window_id: Optional[int] = None
+        self.manual_vars: Dict[str, Any] = {}
         self.root = root
         self.root.title("WinSet - Windows Configuration Toolkit")
         self.root.geometry("1100x750")
@@ -39,10 +61,10 @@ class MainWindow:
         self.setting_loader = SettingLoader()
         
         # UI State
-        self.is_busy = False
-        self.expanded_settings = {}  # Track which settings are expanded
-        self.expanded_setting_id = None
-        self.manual_row_widgets = {}
+        self.is_busy: bool = False
+        self.expanded_settings: Dict[str, Any] = {}  # Track which settings are expanded
+        self.expanded_setting_id: Optional[str] = None
+        self.manual_row_widgets: Dict[str, Any] = {}
         
         self._setup_ui()
         self.center_window()
@@ -68,11 +90,13 @@ class MainWindow:
             except:
                 pass
         
-        # Professional styling with proper contrast
-        bg_color = "#ffffff"  # Clean white background
-        fg_color = "#212529"  # Dark text
-        accent_color = "#0066cc"  # Professional blue
-        border_color = "#dee2e6"  # Light border
+        # Professional styling with Windows 11 Fluent Design
+        bg_color = "#fafafa"  # Light gray background (Windows 11)
+        fg_color = "#323130"  # Dark text (Windows 11)
+        accent_color = "#0078d4"  # Windows 11 blue
+        border_color = "#e1dfdd"  # Light border (Windows 11)
+        tab_bg = "#f3f2f1"  # Tab background (Windows 11)
+        tab_selected = "#ffffff"  # Selected tab background
 
         # Store colors for use in other methods
         self.bg_color = bg_color
@@ -137,17 +161,20 @@ class MainWindow:
         style.configure("TNotebook", background=bg_color, borderwidth=0)
         style.configure(
             "TNotebook.Tab",
-            background="#ffffff",
-            foreground="black",
-            padding=[15, 10],
-            font=("Segoe UI", 10, "bold"),
+            background=tab_bg,
+            foreground=fg_color,
+            padding=[24, 12],
+            font=("Segoe UI", 10, "normal"),
             borderwidth=0,
+            relief="flat",
+            focuscolor="none"
         )
-        # Keep selected tab readable: black-on-light instead of white-on-blue.
+        # Windows 11 style mapping with consistent padding to prevent shrinking
         style.map(
             "TNotebook.Tab",
-            background=[("selected", "#ffffff"), ("active", "#ffffff")],
-            foreground=[("selected", "black"), ("active", "black")],
+            background=[("selected", tab_selected), ("active", "#edebe9")],
+            foreground=[("selected", accent_color), ("active", fg_color)],
+            padding=[("selected", [24, 12]), ("active", [24, 12])]
         )
         
         style.configure(
@@ -186,9 +213,9 @@ class MainWindow:
         self.presets_frame = ttk.Frame(self.notebook)
         self.manual_frame = ttk.Frame(self.notebook)
 
-        self.notebook.add(self.home_frame, text=" Home ")
-        self.notebook.add(self.presets_frame, text=" Presets ")
-        self.notebook.add(self.manual_frame, text=" Manual Configuration ")
+        self.notebook.add(self.home_frame, text="Home")
+        self.notebook.add(self.presets_frame, text="Presets")
+        self.notebook.add(self.manual_frame, text="Manual Configuration")
 
         self.notebook.bind("<<NotebookTabChanged>>", self._on_tab_changed)
 
@@ -232,12 +259,17 @@ class MainWindow:
         ttk.Button(actions_frame, text="📥 Import Settings", command=self.import_settings, width=20).pack(fill=tk.X, pady=(0, 10))
         ttk.Button(actions_frame, text="🔄 Create Restore Point", command=self.create_restore_point, width=20).pack(fill=tk.X, pady=(0, 10))
         
-        # System info
-        info_frame = ttk.LabelFrame(container, text="System Information", padding=20)
-        info_frame.pack(fill=tk.X, pady=(0, 25))
+        # System Tools
+        tools_frame = ttk.LabelFrame(container, text="System Tools", padding=20)
+        tools_frame.pack(fill=tk.X, pady=(0, 25))
         
-        ttk.Label(info_frame, text="Ready to configure your Windows system with professional-grade tools.", 
-                 font=("Segoe UI", 10)).pack(anchor="w")
+        # System tools buttons in a grid
+        ttk.Button(tools_frame, text="⚙️ Control Panel", command=lambda: self.open_system_tool("control"), width=20).pack(fill=tk.X, pady=(0, 10))
+        ttk.Button(tools_frame, text="🔧 Services", command=lambda: self.open_system_tool("services.msc"), width=20).pack(fill=tk.X, pady=(0, 10))
+        ttk.Button(tools_frame, text="🖥️ MSConfig", command=lambda: self.open_system_tool("msconfig.exe")).pack(fill=tk.X, pady=(0, 10))
+        ttk.Button(tools_frame, text="📁 Task Manager", command=lambda: self.open_system_tool("taskmgr"), width=20).pack(fill=tk.X, pady=(0, 10))
+        ttk.Button(tools_frame, text="🔍 Programs & Features", command=lambda: self.open_system_tool("appwiz.cpl"), width=20).pack(fill=tk.X, pady=(0, 10))
+        ttk.Button(tools_frame, text="🌐 Network Settings", command=lambda: self.open_system_tool("ncpa.cpl"), width=20).pack(fill=tk.X, pady=(0, 10))
 
     def _create_presets_tab(self):
         """Create presets tab content"""
@@ -435,6 +467,8 @@ class MainWindow:
         slider_var = None
         if self._should_use_slider(setting, options):
             slider_var = self._create_slider_control(options_frame, setting, current_val, options, setting_id)
+        elif self._should_use_text_entry(setting, options):
+            buttons = self._create_text_control(options_frame, setting, current_val, options, setting_id)
         elif len(options) > 2:
             buttons = self._create_button_controls(options_frame, setting, current_val, options, setting_id)
         else:
@@ -453,12 +487,15 @@ class MainWindow:
 
     def _should_use_slider(self, setting, options):
         """Determine if setting should use slider control"""
+        if getattr(setting, "is_range", False):
+            return True
+
         # Only use sliders for real numeric ranges (e.g. "1-20") or known range settings.
         values_str = getattr(setting, "values", None)
         if isinstance(values_str, str):
-            # Match things like "1-20" or "0 - 100"
+            # Match things like "1-20" or "0 - 100" or "400 (fast) - 900 (slow)"
             import re
-            if re.search(r"\b\d+\s*-\s*\d+\b", values_str):
+            if re.search(r"\b\d+\s*.*?-.*?\s*\d+\b", values_str):
                 return True
 
         # Known registry-backed ranges
@@ -466,6 +503,14 @@ class MainWindow:
             return True
 
         return False
+
+    def _should_use_text_entry(self, setting, options):
+        """Determine if setting should use simple text entry control"""
+        if self._should_use_slider(setting, options):
+            return False
+        if len(options) > 0:
+            return False
+        return True
 
     def _create_slider_control(self, parent, setting, current_val, options, setting_id):
         """Create slider control for range-based settings"""
@@ -477,7 +522,7 @@ class MainWindow:
         # Determine slider range from setting.values when possible
         import re
         values_str = str(getattr(setting, "values", "") or "")
-        m = re.search(r"\b(\d+)\s*-\s*(\d+)\b", values_str)
+        m = re.search(r"\b(\d+)\s*.*?-.*?\s*(\d+)\b", values_str)
         if m:
             from_val = int(m.group(1))
             to_val = int(m.group(2))
@@ -552,6 +597,26 @@ class MainWindow:
             buttons.append((option_btn, option_value))
 
         return buttons
+
+    def _create_text_control(self, parent, setting, current_val, options, setting_id):
+        """Create simple text entry control for unbounded settings"""
+        control_frame = ttk.Frame(parent)
+        control_frame.pack(fill=tk.X, pady=(0, 10))
+        
+        ttk.Label(control_frame, text="Value:", style="Description.TLabel").pack(side=tk.LEFT, padx=(0, 10))
+        
+        entry_var = tk.StringVar(value=str(current_val) if current_val is not None else "")
+        entry = ttk.Entry(control_frame, textvariable=entry_var, width=30)
+        entry.pack(side=tk.LEFT, padx=(0, 10))
+        
+        apply_btn = ttk.Button(
+            control_frame, 
+            text="Apply", 
+            command=lambda sid=setting_id, s=setting, v=entry_var: self._apply_setting_value(sid, s, v.get()), 
+            width=10
+        )
+        apply_btn.pack(side=tk.LEFT)
+        return []
 
     def _parse_setting_options(self, setting, current_val):
         """Parse setting options from values field or create default options"""
@@ -764,3 +829,15 @@ class MainWindow:
             else:
                 messagebox.showerror("Error", "Failed to create restore point.")
         self.run_async(task)
+
+    def open_system_tool(self, tool_name):
+        """Open Windows system tools and utilities"""
+        import subprocess
+        import os
+        
+        try:
+            # Use subprocess to run the system tool
+            subprocess.Popen(tool_name, shell=True)
+            self.update_status(f"Opened {tool_name}")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open {tool_name}: {str(e)}")
