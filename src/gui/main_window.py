@@ -1,13 +1,14 @@
 """
-Main window for WinSet application
+Main window for WinSet application - Professional Configuration Tool Design
 """
 
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import sys
 import os
+import threading
+import time
 
-# Import managers
 # Import managers
 from src.storage.exporter import ProfileExporter
 from src.storage.importer import ProfileImporter
@@ -18,17 +19,15 @@ from src.core.powershell_handler import PowerShellHandler
 from src.core.setting_loader import SettingLoader
 from src.models.setting import RegistrySetting, SettingCategory, SettingType
 
+
 class MainWindow:
-    """Main application window"""
+    """Main application window with professional configuration tool design"""
     
     def __init__(self, root):
         self.root = root
         self.root.title("WinSet - Windows Configuration Toolkit")
-        self.root.geometry("800x600")
-        self.root.minsize(800, 600)
-        
-        # Set icon (if you create one later)
-        # self.root.iconbitmap("assets/icon.ico")
+        self.root.geometry("1100x750")
+        self.root.minsize(1000, 700)
         
         # Initialize Managers
         self.preset_manager = PresetManager()
@@ -39,12 +38,13 @@ class MainWindow:
         self.powershell_handler = PowerShellHandler()
         self.setting_loader = SettingLoader()
         
-        self._create_menu()
-        self._create_toolbar()
-        self._create_main_area()
-        self._create_status_bar()
+        # UI State
+        self.is_busy = False
+        self.expanded_settings = {}  # Track which settings are expanded
+        self.expanded_setting_id = None
+        self.manual_row_widgets = {}
         
-        # Center window
+        self._setup_ui()
         self.center_window()
         
     def center_window(self):
@@ -55,537 +55,712 @@ class MainWindow:
         x = (self.root.winfo_screenwidth() // 2) - (width // 2)
         y = (self.root.winfo_screenheight() // 2) - (height // 2)
         self.root.geometry(f'{width}x{height}+{x}+{y}')
-    
-    def _create_menu(self):
-        """Create menu bar"""
-        menubar = tk.Menu(self.root)
-        self.root.config(menu=menubar)
+
+    def _setup_ui(self):
+        """Create main UI layout with professional styling"""
+        # Use clam theme for better compatibility
+        style = ttk.Style()
+        try:
+            style.theme_use('clam')
+        except:
+            try:
+                style.theme_use('default')
+            except:
+                pass
         
-        # File menu
-        file_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="File", menu=file_menu)
-        file_menu.add_command(label="Export Settings...", command=self.export_settings)
-        file_menu.add_command(label="Import Settings...", command=self.import_settings)
-        file_menu.add_separator()
-        file_menu.add_command(label="Exit", command=self.root.quit)
+        # Professional styling with proper contrast
+        bg_color = "#ffffff"  # Clean white background
+        fg_color = "#212529"  # Dark text
+        accent_color = "#0066cc"  # Professional blue
+        border_color = "#dee2e6"  # Light border
+
+        # Store colors for use in other methods
+        self.bg_color = bg_color
+        self.fg_color = fg_color
+        self.accent_color = accent_color
+        self.border_color = border_color
         
-        # Presets menu
-        presets_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="Presets", menu=presets_menu)
-        presets_menu.add_command(label="🎮 Gaming Mode", command=lambda: self.apply_preset("gaming"))
-        presets_menu.add_command(label="💻 Developer Mode", command=lambda: self.apply_preset("developer"))
-        presets_menu.add_command(label="🔒 Privacy Max", command=lambda: self.apply_preset("privacy"))
-        presets_menu.add_command(label="⚡ Performance", command=lambda: self.apply_preset("performance"))
-        presets_menu.add_command(label="🔋 Battery Saver", command=lambda: self.apply_preset("battery"))
-        presets_menu.add_separator()
-        presets_menu.add_command(label="Manage Presets...", command=self.manage_presets)
+        # Configure styles - all text black for maximum readability
+        # The 'clam' theme gives labels a gray default background; force it to the app surface.
+        style.configure("TFrame", background=bg_color)
+        style.configure("TLabel", background=bg_color, foreground="black", font=("Segoe UI", 9))
+        style.configure("Header.TLabel", background=bg_color, font=("Segoe UI", 18, "bold"), foreground="black")
+        style.configure("Bold.TLabel", background=bg_color, font=("Segoe UI", 10, "bold"), foreground="black")
+        style.configure("Setting.TLabel", background=bg_color, font=("Segoe UI", 11, "bold"), foreground="black")
+        style.configure("Description.TLabel", background=bg_color, font=("Segoe UI", 9), foreground="black")
         
-        # Tools menu
-        tools_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="Tools", menu=tools_menu)
-        tools_menu.add_command(label="Backup Registry", command=self.backup_registry)
-        tools_menu.add_command(label="System Restore Point", command=self.create_restore_point)
-        tools_menu.add_separator()
-        tools_menu.add_command(label="Settings", command=self.open_settings)
+        style.configure("TButton", 
+                       background="#ffffff", 
+                       foreground="black", 
+                       font=("Segoe UI", 9),
+                       padding=8,
+                       borderwidth=1,
+                       relief="solid")
+        style.map("TButton",
+                 background=[("active", "#e9ecef"), ("pressed", accent_color)],
+                 foreground=[("pressed", "white")])
         
-        # Help menu
-        help_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="Help", menu=help_menu)
-        help_menu.add_command(label="Documentation", command=self.open_docs)
-        help_menu.add_command(label="Check for Updates", command=self.check_updates)
-        help_menu.add_separator()
-        help_menu.add_command(label="About", command=self.show_about)
-    
-    def _create_toolbar(self):
-        """Create toolbar with buttons"""
-        toolbar = ttk.Frame(self.root, relief=tk.RAISED, padding=2)
-        toolbar.pack(side=tk.TOP, fill=tk.X)
+        style.configure("Accent.TButton", 
+                       background=accent_color, 
+                       foreground="white", 
+                       font=("Segoe UI", 9, "bold"),
+                       padding=8,
+                       borderwidth=0,
+                       relief="flat")
+        style.map("Accent.TButton",
+                 background=[("active", "#0056b3"), ("pressed", "#004085")])
         
-        # Quick action buttons
-        ttk.Button(toolbar, text="📦 EXPORT", command=self.export_settings).pack(side=tk.LEFT, padx=2)
-        ttk.Button(toolbar, text="📂 IMPORT", command=self.import_settings).pack(side=tk.LEFT, padx=2)
-        ttk.Separator(toolbar, orient=tk.VERTICAL).pack(side=tk.LEFT, padx=5, fill=tk.Y)
-        ttk.Button(toolbar, text="🎮 GAMING", command=lambda: self.apply_preset("gaming")).pack(side=tk.LEFT, padx=2)
-        ttk.Button(toolbar, text="💻 DEV", command=lambda: self.apply_preset("developer")).pack(side=tk.LEFT, padx=2)
-        ttk.Button(toolbar, text="🔒 PRIVACY", command=lambda: self.apply_preset("privacy")).pack(side=tk.LEFT, padx=2)
-        ttk.Separator(toolbar, orient=tk.VERTICAL).pack(side=tk.LEFT, padx=5, fill=tk.Y)
-        ttk.Button(toolbar, text="⚙️ MANUAL", command=self.open_manual).pack(side=tk.LEFT, padx=2)
+        style.configure("TCheckbutton", 
+                       background=bg_color, 
+                       foreground="black", 
+                       font=("Segoe UI", 9))
         
-    def _create_main_area(self):
-        """Create main content area"""
-        # Notebook for tabs
-        self.notebook = ttk.Notebook(self.root)
-        self.notebook.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
-        
-        # Welcome tab
-        self.welcome_frame = ttk.Frame(self.notebook)
-        self.notebook.add(self.welcome_frame, text="🏠 Welcome")
-        self._create_welcome_tab()
-        
-        # Quick Export tab
-        self.export_frame = ttk.Frame(self.notebook)
-        self.notebook.add(self.export_frame, text="📦 Quick Export")
-        self._create_export_tab()
-        
-        # Presets tab
-        self.presets_frame = ttk.Frame(self.notebook)
-        self.notebook.add(self.presets_frame, text="⚡ Presets")
-        self._create_presets_tab()
-        
-        # Manual Config tab
-        self.manual_frame = ttk.Frame(self.notebook)
-        self.notebook.add(self.manual_frame, text="⚙️ Manual Config")
-        self._create_manual_tab()
-        
-    def _create_welcome_tab(self):
-        """Create welcome screen content"""
-        # Welcome message
-        welcome_label = ttk.Label(
-            self.welcome_frame,
-            text="Welcome to WinSet!",
-            font=("Arial", 24, "bold")
+        style.configure("TEntry", 
+                       fieldbackground="white", 
+                       borderwidth=1,
+                       relief="solid",
+                       font=("Segoe UI", 9))
+
+        style.configure(
+            "TLabelframe",
+            background=bg_color,
+            borderwidth=1,
+            relief="solid",
         )
-        welcome_label.pack(pady=30)
+        style.configure(
+            "TLabelframe.Label",
+            background=bg_color,
+            foreground="black",
+            font=("Segoe UI", 9, "bold"),
+        )
         
-        # Description
-        desc_text = """WinSet helps you manage all your Windows settings in one place.
+        style.configure("TNotebook", background=bg_color, borderwidth=0)
+        style.configure(
+            "TNotebook.Tab",
+            background="#ffffff",
+            foreground="black",
+            padding=[15, 10],
+            font=("Segoe UI", 10, "bold"),
+            borderwidth=0,
+        )
+        # Keep selected tab readable: black-on-light instead of white-on-blue.
+        style.map(
+            "TNotebook.Tab",
+            background=[("selected", "#ffffff"), ("active", "#ffffff")],
+            foreground=[("selected", "black"), ("active", "black")],
+        )
+        
+        style.configure(
+            "TProgressbar",
+            background=accent_color,
+            troughcolor="#ffffff",
+            borderwidth=0,
+        )
+        
+        style.configure("TCombobox", 
+                       fieldbackground="white",
+                       borderwidth=1,
+                       relief="solid",
+                       font=("Segoe UI", 9))
+        
+        style.configure("TScale", 
+                       background=bg_color,
+                       troughcolor="#ffffff",
+                       borderwidth=1,
+                       relief="solid")
+        style.configure("Horizontal.TScale", background=bg_color)
+        
+        # Apply theme to root window
+        self.root.configure(bg=bg_color)
 
-• Export your current configuration to a file
-• Import settings on a new PC with one click
-• Apply optimized presets for gaming, development, privacy, and more
-• Fine-tune individual settings with an easy-to-use interface
+        # Main container
+        self.main_frame = ttk.Frame(self.root)
+        self.main_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=15)
 
-Get started by choosing an option below:"""
+        # Notebook for tabs
+        self.notebook = ttk.Notebook(self.main_frame)
+        self.notebook.pack(fill=tk.BOTH, expand=True)
+
+        # Create tabs
+        self.home_frame = ttk.Frame(self.notebook)
+        self.presets_frame = ttk.Frame(self.notebook)
+        self.manual_frame = ttk.Frame(self.notebook)
+
+        self.notebook.add(self.home_frame, text=" Home ")
+        self.notebook.add(self.presets_frame, text=" Presets ")
+        self.notebook.add(self.manual_frame, text=" Manual Configuration ")
+
+        self.notebook.bind("<<NotebookTabChanged>>", self._on_tab_changed)
+
+        self._create_home_tab()
+        self._create_presets_tab()
+        self._create_manual_tab()
+
+        # Status bar at bottom
+        self.status_frame = ttk.Frame(self.main_frame, relief=tk.SOLID, borderwidth=1)
+        self.status_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=(10, 0))
         
-        desc_label = ttk.Label(self.welcome_frame, text=desc_text, justify=tk.CENTER)
-        desc_label.pack(pady=20)
+        self.status_label = ttk.Label(self.status_frame, text="Ready", font=("Segoe UI", 9))
+        self.status_label.pack(side=tk.LEFT, padx=15, pady=8)
         
-        # Quick action buttons
-        button_frame = ttk.Frame(self.welcome_frame)
-        button_frame.pack(pady=30)
+        self.progress_bar = ttk.Progressbar(self.status_frame, orient=tk.HORIZONTAL, length=300, mode='determinate')
+        # Hidden by default
+
+    def _create_home_tab(self):
+        """Create home tab content"""
+        container = ttk.Frame(self.home_frame)
+        container.pack(fill=tk.BOTH, expand=True, padx=25, pady=25)
         
-        ttk.Button(
-            button_frame,
-            text="📦 Quick Export",
-            command=self.export_settings,
-            width=20
-        ).pack(side=tk.LEFT, padx=10)
+        # Welcome section
+        welcome_frame = ttk.LabelFrame(container, text="Welcome", padding=20)
+        welcome_frame.pack(fill=tk.X, pady=(0, 25))
         
-        ttk.Button(
-            button_frame,
-            text="⚡ Browse Presets",
-            command=lambda: self.notebook.select(self.presets_frame),
-            width=20
-        ).pack(side=tk.LEFT, padx=10)
+        welcome_label = ttk.Label(welcome_frame, text="WinSet", style="Header.TLabel")
+        welcome_label.pack(anchor="w", pady=(0, 10))
         
-        ttk.Button(
-            button_frame,
-            text="⚙️ Manual Config",
-            command=self.open_manual,
-            width=20
-        ).pack(side=tk.LEFT, padx=10)
+        desc_label = ttk.Label(welcome_frame, 
+                             text="Windows Configuration Toolkit\nEasily backup, restore, and optimize your Windows experience.", 
+                             font=("Segoe UI", 12))
+        desc_label.pack(anchor="w", pady=(0, 15))
+        
+        # Quick actions
+        actions_frame = ttk.LabelFrame(container, text="Quick Actions", padding=20)
+        actions_frame.pack(fill=tk.X, pady=(0, 25))
+        
+        # Action buttons in a grid
+        ttk.Button(actions_frame, text="📤 Export Settings", command=self.export_settings, width=20).pack(fill=tk.X, pady=(0, 10))
+        ttk.Button(actions_frame, text="📥 Import Settings", command=self.import_settings, width=20).pack(fill=tk.X, pady=(0, 10))
+        ttk.Button(actions_frame, text="🔄 Create Restore Point", command=self.create_restore_point, width=20).pack(fill=tk.X, pady=(0, 10))
         
         # System info
-        info_frame = ttk.LabelFrame(self.welcome_frame, text="System Information", padding=10)
-        info_frame.pack(fill=tk.X, padx=50, pady=20)
+        info_frame = ttk.LabelFrame(container, text="System Information", padding=20)
+        info_frame.pack(fill=tk.X, pady=(0, 25))
         
-        # Get Windows version (simplified)
-        import platform
-        win_version = platform.platform()
-        
-        ttk.Label(info_frame, text=f"Windows: {win_version}").pack(anchor=tk.W)
-        ttk.Label(info_frame, text=f"Python: {sys.version.split()[0]}").pack(anchor=tk.W)
-        ttk.Label(info_frame, text="Status: Ready").pack(anchor=tk.W)
-        
-    def _create_export_tab(self):
-        """Create export tab content"""
-        ttk.Label(self.export_frame, text="Export Settings", font=("Arial", 16)).pack(pady=10)
-        
-        # Category selection
-        categories_frame = ttk.LabelFrame(self.export_frame, text="Select Categories to Export", padding=10)
-        categories_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-        
-        # Checkboxes for categories
-        self.category_vars = {}
-        
-        for i, category in enumerate(self.setting_loader.get_categories()):
-            cat_display = f"{category.value.upper().replace('_', ' ')}"
-            var = tk.BooleanVar(value=True)
-            self.category_vars[category] = var
-            ttk.Checkbutton(categories_frame, text=cat_display, variable=var).grid(
-                row=i//2, column=i%2, sticky=tk.W, padx=20, pady=5
-            )
-        
-        # Buttons
-        button_frame = ttk.Frame(self.export_frame)
-        button_frame.pack(pady=10)
-        
-        ttk.Button(button_frame, text="Select All", command=self.select_all_categories).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Clear All", command=self.clear_all_categories).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Export Selected", command=self.export_selected).pack(side=tk.LEFT, padx=20)
-        
+        ttk.Label(info_frame, text="Ready to configure your Windows system with professional-grade tools.", 
+                 font=("Segoe UI", 10)).pack(anchor="w")
+
     def _create_presets_tab(self):
-        """Create presets tab with cards"""
-        # Title
-        ttk.Label(self.presets_frame, text="One-Click Presets", font=("Arial", 16)).pack(pady=10)
+        """Create presets tab content"""
+        container = ttk.Frame(self.presets_frame)
+        container.pack(fill=tk.BOTH, expand=True, padx=25, pady=25)
         
-        # Create canvas with scrollbar for presets
-        canvas = tk.Canvas(self.presets_frame)
-        scrollbar = ttk.Scrollbar(self.presets_frame, orient="vertical", command=canvas.yview)
-        scrollable_frame = ttk.Frame(canvas)
+        ttk.Label(container, text="Configuration Presets", style="Header.TLabel").pack(anchor="w", pady=(0, 20))
         
-        scrollable_frame.bind(
-            "<Configure>",
-            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
-        )
+        # Presets grid
+        presets_frame = ttk.Frame(container)
+        presets_frame.pack(fill=tk.BOTH, expand=True)
         
-        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
-        
-        # Preset definitions
         presets = [
-            {
-                "name": "🎮 Gaming Mode",
-                "desc": "Maximize FPS and gaming performance",
-                "features": "• Game Mode ON\n• Visual Effects OFF\n• GPU Priority ON\n• Background Apps OFF",
-                "color": "#2E7D32"
-            },
-            {
-                "name": "💻 Developer Mode",
-                "desc": "Configure for software development",
-                "features": "• File Extensions SHOW\n• Hidden Files SHOW\n• PowerShell Unrestricted\n• Developer Mode ON",
-                "color": "#1565C0"
-            },
-            {
-                "name": "🔒 Privacy Max",
-                "desc": "Maximum privacy and security",
-                "features": "• Telemetry OFF\n• Location OFF\n• Camera/Mic OFF\n• Advertising ID OFF",
-                "color": "#C62828"
-            },
-            {
-                "name": "⚡ Performance",
-                "desc": "Optimize for speed",
-                "features": "• Animations OFF\n• High Performance Power\n• Visual Effects OFF\n• Processor Scheduling",
-                "color": "#F57C00"
-            },
-            {
-                "name": "🔋 Battery Saver",
-                "desc": "Extend laptop battery life",
-                "features": "• Power Saving Mode\n• Screen Dimming\n• Aggressive Sleep\n• Background Apps OFF",
-                "color": "#00796B"
-            },
-            {
-                "name": "📺 Media Center",
-                "desc": "Optimize for media playback",
-                "features": "• Keep System Awake\n• Media Sharing ON\n• Display OFF Never\n• Audio Enhancements",
-                "color": "#6A1B9A"
-            }
+            {"id": "gaming", "title": "🎮 Gaming Mode", "desc": "Optimize system for gaming performance"},
+            {"id": "developer", "title": "💻 Developer Mode", "desc": "Configure for development workflows"},
+            {"id": "privacy", "title": "🔒 Privacy Max", "desc": "Maximum privacy and security settings"},
+            {"id": "performance", "title": "⚡ Peak Performance", "desc": "Unlock full system performance"},
+            {"id": "battery", "title": "🔋 Battery Saver", "desc": "Optimize for extended battery life"}
         ]
         
-        # Create preset cards
-        for preset in presets:
-            self._create_preset_card(scrollable_frame, preset)
-        
-        canvas.pack(side="left", fill="both", expand=True, padx=10)
-        scrollbar.pack(side="right", fill="y")
-        
-    def _create_preset_card(self, parent, preset):
-        """Create a preset card"""
-        card = ttk.Frame(parent, relief=tk.RAISED, borderwidth=2, padding=10)
-        card.pack(fill=tk.X, pady=5, padx=5)
-        
-        # Preset name
-        name_label = ttk.Label(card, text=preset["name"], font=("Arial", 14, "bold"))
-        name_label.pack(anchor=tk.W)
-        
-        # Description
-        desc_label = ttk.Label(card, text=preset["desc"], foreground="gray")
-        desc_label.pack(anchor=tk.W, pady=2)
-        
-        # Features
-        features_label = ttk.Label(card, text=preset["features"], justify=tk.LEFT)
-        features_label.pack(anchor=tk.W, pady=5)
-        
-        # Apply button
-        btn = ttk.Button(
-            card,
-            text="APPLY PRESET",
-            command=lambda p=preset["name"]: self.apply_preset(p)
-        )
-        btn.pack(anchor=tk.E)
-        
-    def _create_manual_tab(self):
-        """Create manual configuration tab with categorization."""
-        ttk.Label(self.manual_frame, text="Manual Configuration", font=("Arial", 16, "bold")).pack(pady=10)
-        
-        # Search/Filter frame
-        filter_frame = ttk.Frame(self.manual_frame)
-        filter_frame.pack(fill=tk.X, padx=10, pady=5)
-        ttk.Label(filter_frame, text="Search:").pack(side=tk.LEFT, padx=5)
-        self.search_var = tk.StringVar()
-        self.search_var.trace_add("write", lambda *args: self.refresh_manual_config())
-        ttk.Entry(filter_frame, textvariable=self.search_var).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
+        for i, p in enumerate(presets):
+            row = i // 2
+            col = i % 2
+            
+            preset_card = ttk.LabelFrame(presets_frame, text="", padding=15, relief=tk.RIDGE, borderwidth=1)
+            preset_card.grid(row=row, column=col, sticky="nsew", padx=10, pady=10)
+            presets_frame.grid_columnconfigure(col, weight=1)
+            
+            ttk.Label(preset_card, text=p["title"], style="Bold.TLabel").pack(anchor="w", pady=(0, 5))
+            ttk.Label(preset_card, text=p["desc"], style="Description.TLabel").pack(anchor="w", pady=(0, 10))
+            ttk.Button(preset_card, text="Apply Preset", 
+                      command=lambda pid=p["id"]: self.apply_preset(pid)).pack(fill=tk.X)
 
-        # Main scrollable area
+    def _create_manual_tab(self):
+        """Create manual configuration tab"""
         container = ttk.Frame(self.manual_frame)
-        container.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        container.pack(fill=tk.BOTH, expand=True, padx=25, pady=25)
         
-        self.manual_canvas = tk.Canvas(container)
-        scrollbar = ttk.Scrollbar(container, orient="vertical", command=self.manual_canvas.yview)
-        self.manual_scrollable_frame = ttk.Frame(self.manual_canvas)
+        # Header with search
+        header_frame = ttk.Frame(container)
+        header_frame.pack(fill=tk.X, pady=(0, 20))
         
-        self.manual_scrollable_frame.bind(
+        ttk.Label(header_frame, text="Manual Configuration", style="Header.TLabel").pack(side=tk.LEFT)
+        
+        self.search_var = tk.StringVar()
+        search_frame = ttk.Frame(header_frame)
+        search_frame.pack(side=tk.RIGHT)
+        
+        ttk.Label(search_frame, text="🔍 Search:").pack(side=tk.LEFT, padx=(0, 5))
+        search_entry = ttk.Entry(search_frame, textvariable=self.search_var, width=30)
+        search_entry.pack(side=tk.LEFT)
+        
+        # Scrollable settings area
+        scroll_frame = ttk.Frame(container)
+        scroll_frame.pack(fill=tk.BOTH, expand=True)
+
+        self.manual_canvas = tk.Canvas(scroll_frame, highlightthickness=0, bg=self.bg_color)
+        manual_scroll = ttk.Scrollbar(scroll_frame, orient="vertical", command=self.manual_canvas.yview)
+        self.manual_scrollable = ttk.Frame(self.manual_canvas)
+
+        self.manual_scrollable.bind("<Configure>", lambda e: self.manual_canvas.configure(scrollregion=self.manual_canvas.bbox("all")))
+        self.manual_window_id = self.manual_canvas.create_window((0, 0), window=self.manual_scrollable, anchor="nw")
+        self.manual_canvas.configure(yscrollcommand=manual_scroll.set)
+
+        # Make the inner frame always match the canvas width (no wasted space)
+        self.manual_canvas.bind(
             "<Configure>",
-            lambda e: self.manual_canvas.configure(scrollregion=self.manual_canvas.bbox("all"))
+            lambda e: self.manual_canvas.itemconfigure(self.manual_window_id, width=e.width),
         )
         
-        self.manual_canvas.create_window((0, 0), window=self.manual_scrollable_frame, anchor="nw")#, width=self.manual_canvas.winfo_width())
-        self.manual_canvas.configure(yscrollcommand=scrollbar.set)
+        self.manual_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        manual_scroll.pack(side=tk.RIGHT, fill=tk.Y)
         
-        self.manual_canvas.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
+        # Bind events
+        self._bind_scroll_events()
+        search_entry.bind("<KeyRelease>", self._on_search)
+
+    def _bind_scroll_events(self):
+        """Bind scroll events to work properly"""
+        self.manual_canvas.bind("<MouseWheel>", self._on_mouse_wheel)
+        self.manual_frame.bind("<MouseWheel>", self._on_mouse_wheel)
+        self.manual_scrollable.bind("<MouseWheel>", self._on_mouse_wheel)
+        self.notebook.bind("<MouseWheel>", self._on_global_mouse_wheel)
+        self.main_frame.bind("<MouseWheel>", self._on_global_mouse_wheel)
+        self.manual_canvas.bind("<Map>", self._rebind_scroll_events)
+
+    def _rebind_scroll_events(self, event=None):
+        """Rebind scroll events to include new widgets"""
+        def bind_recursive(widget):
+            widget.bind("<MouseWheel>", self._on_mouse_wheel)
+            for child in widget.winfo_children():
+                bind_recursive(child)
         
-        # Initial population
+        bind_recursive(self.manual_scrollable)
+
+    def _on_global_mouse_wheel(self, event):
+        """Handle global mouse wheel events"""
+        selected_tab = self.notebook.tab(self.notebook.select(), "text")
+        if "Manual Configuration" in selected_tab:
+            self._on_mouse_wheel(event)
+
+    def _on_tab_changed(self, event):
+        """Handle tab change events."""
+        selected_tab = self.notebook.tab(self.notebook.select(), "text")
+        if "Manual Configuration" in selected_tab:
+            self.refresh_manual_config()
+            self.root.after(100, self._rebind_scroll_events)
+
+    def _on_search(self, event):
+        """Handle search box updates."""
         self.refresh_manual_config()
 
+    def _on_mouse_wheel(self, event):
+        """Handles mouse wheel scrolling for the manual config canvas."""
+        if self.manual_canvas.winfo_exists():
+            self.manual_canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+
     def refresh_manual_config(self):
-        """Populate or refresh the manual config list based on filter."""
-        # Clear existing
-        for widget in self.manual_scrollable_frame.winfo_children():
+        """Refresh the list of manual settings"""
+        for widget in self.manual_scrollable.winfo_children():
             widget.destroy()
             
         search_query = self.search_var.get().lower()
-        
-        # Store checkbox vars to track state
-        self.manual_vars = {} 
+        self.manual_vars = {}
+        self.manual_row_widgets = {}
 
         for category in self.setting_loader.get_categories():
             settings = self.setting_loader.get_settings_for_category(category)
+            filtered = [s for s in settings if search_query in s.name.lower() or search_query in (s.description or "").lower()]
             
-            # Filter settings
-            filtered_settings = [s for s in settings if search_query in s.name.lower() or search_query in (s.description or "").lower()]
-            
-            if not filtered_settings:
-                continue
+            if not filtered: continue
                 
-            # Category Header
-            cat_frame = ttk.LabelFrame(self.manual_scrollable_frame, text=f"📂 {category.value.upper().replace('_', ' ')}", padding=5)
-            cat_frame.pack(fill=tk.X, pady=10, padx=5)
-            
-            for setting in filtered_settings:
-                s_frame = ttk.Frame(cat_frame)
-                s_frame.pack(fill=tk.X, pady=2)
-                
-                # Check if it should be toggled on (live registry read)
-                current_val = self.registry_handler.read_value(setting.hive, setting.key_path, setting.value_name)
-                
-                # Simplified toggle check
-                is_on = False
-                if setting.value_type == "REG_DWORD":
-                    is_on = (current_val == 1)
-                elif setting.value_type == "REG_SZ":
-                    # Some strings are "1"/"0" or "Enabled"/"Disabled"
-                    is_on = str(current_val).lower() in ["1", "enabled", "yes", "on"]
-                
-                var = tk.BooleanVar(value=is_on)
-                self.manual_vars[setting.id] = (setting, var)
-                
-                def toggle_command(s=setting, v=var):
-                    # Defaulting to 1/0 for most toggles
-                    new_val = 1 if v.get() else 0
-                    if s.value_type == "REG_SZ":
-                        new_val = "1" if v.get() else "0"
-                        
-                    success = self.registry_handler.write_value(
-                        s.hive, s.key_path, s.value_name, s.value_type, new_val
-                    )
-                    if success:
-                        self.status_label.config(text=f"Updated: {s.name}")
-                    else:
-                        messagebox.showerror("Error", f"Failed to update {s.name}")
-                        v.set(not v.get())
-                
-                check = ttk.Checkbutton(s_frame, text=setting.name, variable=var, command=toggle_command)
-                check.pack(side=tk.LEFT)
-                
-                if setting.description:
-                    help_label = ttk.Label(s_frame, text=" (?)", foreground="blue", cursor="hand2")
-                    help_label.pack(side=tk.LEFT)
-                    help_label.bind("<Button-1>", lambda e, s=setting: messagebox.showinfo(s.name, s.description))
+            # Category header (flat, modern; avoids LabelFrame shading)
+            category_container = ttk.Frame(self.manual_scrollable)
+            category_container.pack(fill=tk.X, pady=(14, 6), padx=10)
 
-    def _create_status_bar(self):
-        """Create status bar at bottom"""
-        self.status_bar = ttk.Frame(self.root, relief=tk.SUNKEN, padding=2)
-        self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
-        
-        self.status_label = ttk.Label(
-            self.status_bar,
-            text="Ready | Run as Administrator: Yes",
-            anchor=tk.W
-        )
-        self.status_label.pack(side=tk.LEFT)
-        
-        self.version_label = ttk.Label(
-            self.status_bar,
-            text="v0.1.0",
-            anchor=tk.E
-        )
-        self.version_label.pack(side=tk.RIGHT)
-    
-    # Command methods
-    def export_settings(self):
-        file_path = filedialog.asksaveasfilename(
-            defaultextension=".json",
-            filetypes=[("JSON files", "*.json")],
-            title="Export Profile"
-        )
-        if not file_path:
-            return
-            
-        settings_to_export = []
-        # If we have manual settings toggled/indexed, use those. 
-        # For now, let's export all settings that have been explicitly identified in manual_vars
-        if hasattr(self, 'manual_vars'):
-            for setting_id, (setting, var) in self.manual_vars.items():
-                if var.get(): # If "on", export it
-                    # Update setting value from live registry
-                    current_val = self.registry_handler.read_value(setting.hive, setting.key_path, setting.value_name)
-                    setting.value = current_val
-                    settings_to_export.append(setting)
+            ttk.Label(
+                category_container,
+                text=category.value.replace("_", " ").title(),
+                style="Bold.TLabel",
+            ).pack(anchor="w")
+            ttk.Separator(category_container, orient="horizontal").pack(fill=tk.X, pady=(6, 0))
 
-        if not settings_to_export:
-            # Fallback to a default set if nothing is selected manually
-            messagebox.showwarning("No Selection", "Please check at least one setting in 'Manual Config' to export.")
-            return
+            category_frame = ttk.Frame(self.manual_scrollable)
+            category_frame.pack(fill=tk.X, pady=(6, 0), padx=10)
+
+            for setting in filtered:
+                self._create_setting_row(category_frame, setting)
         
-        success = self.exporter.export_profile(settings_to_export, file_path, profile_name="WinSet Custom Export")
-        if success:
-            messagebox.showinfo("Export Successful", f"Profile successfully exported to:\n{file_path}")
+        self.root.after(50, self._rebind_scroll_events)
+
+    def _create_setting_row(self, parent, setting):
+        """Create a row for a setting with professional controls"""
+        row_frame = ttk.Frame(parent)
+        row_frame.pack(fill=tk.X, pady=4)
+        
+        # Check current state
+        current_val = self.registry_handler.read_value(setting.hive, setting.key_path, setting.value_name)
+        
+        # Setting name (clickable)
+        setting_id = f"setting_{setting.id}"
+        is_expanded = (self.expanded_setting_id == setting_id)
+        
+        # Create expandable setting frame
+        setting_frame = ttk.Frame(row_frame)
+        setting_frame.pack(fill=tk.X)
+        
+        # Header with triangle and name
+        header_frame = ttk.Frame(setting_frame)
+        header_frame.pack(fill=tk.X)
+        
+        # Triangle indicator
+        triangle = "▼" if is_expanded else "▶"
+        triangle_label = ttk.Label(header_frame, text=triangle, font=("Segoe UI", 10), foreground=self.accent_color)
+        triangle_label.pack(side=tk.LEFT, padx=(0, 8))
+        
+        # Setting name
+        name_label = ttk.Label(header_frame, text=setting.name, style="Setting.TLabel", 
+                            cursor="hand2")
+        name_label.pack(side=tk.LEFT)
+        
+        # Bind click event to toggle expansion
+        for widget in [triangle_label, name_label]:
+            widget.bind("<Button-1>", lambda e, sid=setting_id: self._toggle_setting_expansion(sid))
+        
+        # Options frame (initially hidden)
+        options_frame = ttk.Frame(setting_frame)
+        if is_expanded:
+            options_frame.pack(fill=tk.X, pady=(12, 0), padx=(25, 0))
+        
+        # Parse setting options
+        options = self._parse_setting_options(setting, current_val)
+        
+        buttons = []
+        slider_var = None
+        if self._should_use_slider(setting, options):
+            slider_var = self._create_slider_control(options_frame, setting, current_val, options, setting_id)
+        elif len(options) > 2:
+            buttons = self._create_button_controls(options_frame, setting, current_val, options, setting_id)
         else:
-            messagebox.showerror("Export Failed", "There was an error exporting the profile.")
+            buttons = self._create_simple_controls(options_frame, setting, current_val, options, setting_id)
+
+        if setting.description:
+            ttk.Label(options_frame, text=setting.description, style="Description.TLabel", wraplength=700, justify=tk.LEFT).pack(anchor="w", pady=(8, 0))
+
+        self.manual_row_widgets[setting_id] = {
+            "setting": setting,
+            "triangle": triangle_label,
+            "options_frame": options_frame,
+            "buttons": buttons,
+            "slider_var": slider_var,
+        }
+
+    def _should_use_slider(self, setting, options):
+        """Determine if setting should use slider control"""
+        # Only use sliders for real numeric ranges (e.g. "1-20") or known range settings.
+        values_str = getattr(setting, "values", None)
+        if isinstance(values_str, str):
+            # Match things like "1-20" or "0 - 100"
+            import re
+            if re.search(r"\b\d+\s*-\s*\d+\b", values_str):
+                return True
+
+        # Known registry-backed ranges
+        if str(setting.value_name).lower() in {"mousesensitivity"}:
+            return True
+
+        return False
+
+    def _create_slider_control(self, parent, setting, current_val, options, setting_id):
+        """Create slider control for range-based settings"""
+        control_frame = ttk.Frame(parent)
+        control_frame.pack(fill=tk.X, pady=(0, 10))
         
-    def import_settings(self):
-        file_path = filedialog.askopenfilename(
-            filetypes=[("JSON files", "*.json")],
-            title="Select Profile to Import"
+        ttk.Label(control_frame, text="Adjust:", style="Description.TLabel").pack(side=tk.LEFT, padx=(0, 10))
+        
+        # Determine slider range from setting.values when possible
+        import re
+        values_str = str(getattr(setting, "values", "") or "")
+        m = re.search(r"\b(\d+)\s*-\s*(\d+)\b", values_str)
+        if m:
+            from_val = int(m.group(1))
+            to_val = int(m.group(2))
+        else:
+            from_val = 0
+            to_val = 100
+
+        # Create slider
+        try:
+            current_num = float(current_val) if current_val is not None else float(from_val)
+        except (TypeError, ValueError):
+            current_num = float(from_val)
+
+        slider_var = tk.DoubleVar(value=current_num)
+        slider = ttk.Scale(
+            control_frame,
+            from_=from_val,
+            to=to_val,
+            variable=slider_var,
+            orient=tk.HORIZONTAL,
+            length=300,
         )
-        if not file_path:
-            return
+
+        if from_val == 1 and to_val == 20 and str(setting.value_name).lower() in {"mousesensitivity"}:
+            ttk.Label(control_frame, text="(Low ← → High)", style="Description.TLabel").pack(side=tk.LEFT, padx=(10, 0))
+        
+        slider.pack(side=tk.LEFT, padx=(0, 10))
+        
+        slider.bind("<ButtonRelease-1>", lambda e, sid=setting_id, s=setting, v=slider_var: self._apply_slider_value(sid, s, v))
+
+        return slider_var
+
+    def _create_button_controls(self, parent, setting, current_val, options, setting_id):
+        """Create button controls for multi-option settings"""
+        control_frame = ttk.Frame(parent)
+        control_frame.pack(fill=tk.X, pady=(0, 10))
+        
+        ttk.Label(control_frame, text="Select:", style="Description.TLabel").pack(side=tk.LEFT, padx=(0, 10))
+        
+        buttons_frame = ttk.Frame(control_frame)
+        buttons_frame.pack(side=tk.LEFT)
+        
+        buttons = []
+        for option_name, option_value in options.items():
+            is_selected = str(current_val) == str(option_value)
             
+            option_btn = ttk.Button(buttons_frame, text=option_name,
+                                style=("Accent.TButton" if is_selected else "TButton"),
+                                width=12)
+            option_btn.pack(side=tk.LEFT, padx=(0, 5))
+            
+            option_btn.bind("<Button-1>", lambda e, sid=setting_id, s=setting, v=option_value: self._apply_setting_value(sid, s, v))
+            buttons.append((option_btn, option_value))
+
+        return buttons
+
+    def _create_simple_controls(self, parent, setting, current_val, options, setting_id):
+        """Create simple controls for basic settings"""
+        control_frame = ttk.Frame(parent)
+        control_frame.pack(fill=tk.X, pady=(0, 10))
+        
+        buttons = []
+        for option_name, option_value in options.items():
+            is_selected = str(current_val) == str(option_value)
+            
+            option_btn = ttk.Button(control_frame, text=option_name,
+                                style=("Accent.TButton" if is_selected else "TButton"),
+                                width=15)
+            option_btn.pack(side=tk.LEFT, padx=(0, 8))
+            
+            option_btn.bind("<Button-1>", lambda e, sid=setting_id, s=setting, v=option_value: self._apply_setting_value(sid, s, v))
+            buttons.append((option_btn, option_value))
+
+        return buttons
+
+    def _parse_setting_options(self, setting, current_val):
+        """Parse setting options from values field or create default options"""
+        options = {}
+        
+        # Check if setting has explicit options defined
+        if hasattr(setting, 'options') and setting.options:
+            return setting.options
+        
+        # Parse from values field in settings.json
+        if hasattr(setting, 'values') and setting.values:
+            values_str = str(setting.values)
+
+            # If it's a numeric range (e.g. "1-20"), it's a slider setting, not discrete options.
+            import re
+            if re.search(r"\b\d+\s*-\s*\d+\b", values_str):
+                return {}
+
+            # Split on common separators.
+            # Example formats:
+            # - "0 = Left, 1 = Center"
+            # - "0 = Off; 1 = On"
+            # - "0=Slow,1=Medium,2=Fast"
+            parts_list = re.split(r"[,;]", values_str)
+            for option in parts_list:
+                if '=' not in option:
+                    continue
+                left, right = option.split('=', 1)
+                value = left.strip()
+                name = right.strip()
+                if value and name:
+                    options[name] = value
+        else:
+            # Default boolean options
+            if setting.value_type == "REG_DWORD":
+                options = {
+                    "Enable": "1",
+                    "Disable": "0"
+                }
+            elif setting.value_type == "REG_SZ":
+                options = {
+                    "Enable": "1",
+                    "Disable": "0"
+                }
+        
+        return options
+
+    def _toggle_setting_expansion(self, setting_id):
+        """Toggle expansion state of a setting"""
+        if self.expanded_setting_id == setting_id:
+            self._collapse_setting_row(setting_id)
+            self.expanded_setting_id = None
+            return
+
+        if self.expanded_setting_id is not None:
+            self._collapse_setting_row(self.expanded_setting_id)
+
+        self.expanded_setting_id = setting_id
+        self._expand_setting_row(setting_id)
+
+    def _collapse_setting_row(self, setting_id):
+        row = self.manual_row_widgets.get(setting_id)
+        if not row:
+            return
+        row["triangle"].config(text="▶")
+        row["options_frame"].pack_forget()
+
+    def _expand_setting_row(self, setting_id):
+        row = self.manual_row_widgets.get(setting_id)
+        if not row:
+            return
+        row["triangle"].config(text="▼")
+        row["options_frame"].pack(fill=tk.X, pady=(12, 0), padx=(25, 0))
+
+    def _apply_slider_value(self, setting_id, setting, var):
+        """Apply slider value to setting"""
+        new_val_num = int(round(var.get()))
+
+        if setting.value_type == "REG_SZ":
+            new_val = str(new_val_num)
+        elif setting.value_type == "REG_DWORD":
+            new_val = int(new_val_num)
+        else:
+            new_val = new_val_num
+        
+        success = self.registry_handler.write_value(setting.hive, setting.key_path, setting.value_name, setting.value_type, new_val)
+        if success:
+            self.update_status(f"Updated: {setting.name}")
+            self._update_row_selection_state(setting_id)
+        else:
+            messagebox.showerror("Error", f"Failed to update {setting.name}")
+
+    def _apply_setting_value(self, setting_id, setting, value):
+        """Apply a specific value to a setting"""
+        # Convert value based on setting type
+        if setting.value_type == "REG_SZ":
+            new_val = str(value)
+        elif setting.value_type == "REG_DWORD":
+            new_val = int(value)
+        else:
+            new_val = value
+        
+        success = self.registry_handler.write_value(setting.hive, setting.key_path, setting.value_name, setting.value_type, new_val)
+        if success:
+            self.update_status(f"Updated: {setting.name}")
+            self._update_row_selection_state(setting_id)
+        else:
+            messagebox.showerror("Error", f"Failed to update {setting.name}")
+
+    def _update_row_selection_state(self, setting_id):
+        row = self.manual_row_widgets.get(setting_id)
+        if not row:
+            return
+
+        setting = row.get("setting")
+        if not setting:
+            return
+
+        current_val = self.registry_handler.read_value(setting.hive, setting.key_path, setting.value_name)
+        for btn, opt_val in row.get("buttons", []) or []:
+            is_selected = str(current_val) == str(opt_val)
+            btn.configure(style=("Accent.TButton" if is_selected else "TButton"))
+
+    def update_status(self, text, progress=None):
+        self.status_label.config(text=text)
+        if progress is not None:
+            self.progress_bar.pack(side=tk.RIGHT, padx=15, pady=8)
+            self.progress_bar.config(value=progress * 100)
+        else:
+            self.progress_bar.pack_forget()
+        self.root.update_idletasks()
+
+    def run_async(self, func, *args, **kwargs):
+        if self.is_busy: return
+        self.is_busy = True
+        
+        def wrapper():
+            try:
+                func(*args, **kwargs)
+            finally:
+                self.is_busy = False
+                self.update_status("Ready")
+                
+        threading.Thread(target=wrapper, daemon=True).start()
+
+    def export_settings(self):
+        file_path = filedialog.asksaveasfilename(defaultextension=".json", filetypes=[("JSON files", "*.json")])
+        if not file_path: return
+        
+        def task():
+            self.update_status("Preparing export...", 0.1)
+            settings = []
+            all_cats = self.setting_loader.get_categories()
+            for i, cat in enumerate(all_cats):
+                self.update_status(f"Reading {cat.value}...", 0.1 + (0.7 * (i/len(all_cats))))
+                for s in self.setting_loader.get_settings_for_category(cat):
+                    val = self.registry_handler.read_value(s.hive, s.key_path, s.value_name)
+                    if val is not None:
+                        s.value = val
+                        settings.append(s)
+            
+            self.update_status("Saving...", 0.9)
+            if self.exporter.export_profile(settings, file_path, "WinSet Export"):
+                self.update_status("Export Complete", 1.0)
+                messagebox.showinfo("Success", f"Profile saved to {os.path.basename(file_path)}")
+            else:
+                messagebox.showerror("Error", "Export failed.")
+        self.run_async(task)
+
+    def import_settings(self):
+        file_path = filedialog.askopenfilename(filetypes=[("JSON files", "*.json")])
+        if not file_path: return
+        
         success, msg, profile = self.importer.load_profile(file_path)
         if not success:
-            messagebox.showerror("Import Failed", msg)
+            messagebox.showerror("Import Error", msg)
             return
             
-        if messagebox.askyesno("Confirm Import", f"Are you sure you want to apply settings from '{profile.name}'?"):
-            self.backup_manager.create_restore_point(f"WinSet - Before Profile '{profile.name}'")
-            results = self.importer.apply_profile(profile)
-            
-            success_count = sum(1 for v in results.values() if v)
-            messagebox.showinfo(
-                "Import Complete", 
-                f"Successfully applied {success_count} settings from '{profile.name}'."
-            )
-        
-    def apply_preset(self, preset_name):
-        preset_id = preset_name.split(" ")[-1].lower() if " " in preset_name else preset_name.lower()
-        if preset_id == "max": preset_id = "privacy"
-        if preset_id == "mode": preset_id = preset_name.split(" ")[1].lower()
-        if preset_name == "developer": preset_id = "developer"
-        if preset_name == "gaming": preset_id = "gaming"
-        if preset_name == "privacy": preset_id = "privacy"
-        if preset_name == "performance": preset_id = "performance"
-        if preset_name == "battery": preset_id = "battery"
+        if messagebox.askyesno("Confirm", f"Apply '{profile.name}'?"):
+            def task():
+                self.update_status("Creating Restore Point...", 0.2)
+                self.backup_manager.create_restore_point(f"WinSet Before Import: {profile.name}")
+                self.update_status("Applying...", 0.5)
+                results = self.importer.apply_profile(profile, safe_mode=False)
+                self.update_status("Import Complete", 1.0)
+                messagebox.showinfo("Success", f"Applied {sum(1 for v in results.values() if v)} settings.")
+            self.run_async(task)
 
-        
-        if messagebox.askyesno("Confirm Preset", f"Are you sure you want to apply the '{preset_name}' preset?"):
-            self.backup_manager.create_restore_point(f"WinSet - Before {preset_name}")
-            success, msg, results = self.preset_manager.apply_preset(preset_id)
-            
-            if success:
-                success_count = sum(1 for v in results.values() if v)
-                messagebox.showinfo("Preset Applied", f"Successfully applied {success_count} settings for '{preset_name}'.\n\nSome changes may require a restart to take full effect.")
-            else:
-                messagebox.showerror("Error", f"Failed to apply preset:\n{msg}")
-        
-    def manage_presets(self):
-        messagebox.showinfo("Manage Presets", "Preset management coming soon!")
-        
-    def backup_registry(self):
-        success = self.backup_manager.create_restore_point("WinSet Manual User Backup")
-        if success:
-            messagebox.showinfo("Backup Successful", "System Restore Point created successfully.")
-        else:
-            messagebox.showerror("Backup Failed", "Failed to create System Restore Point. Make sure you are running as Administrator and System Restore is enabled.")
-        
+    def apply_preset(self, preset_id):
+        if messagebox.askyesno("Confirm", f"Apply {preset_id.title()} preset?"):
+            def task():
+                self.update_status("Creating Restore Point...", 0.1)
+                self.backup_manager.create_restore_point(f"WinSet Before Preset: {preset_id}")
+                self.update_status(f"Applying {preset_id}...", 0.4)
+                success, msg, results = self.preset_manager.apply_preset(preset_id)
+                if success:
+                    self.update_status("Preset Applied", 1.0)
+                    messagebox.showinfo("Success", f"Applied {sum(1 for v in results.values() if v)} settings.")
+                else:
+                    messagebox.showerror("Error", msg)
+            self.run_async(task)
+
     def create_restore_point(self):
-        self.backup_registry()
-        
-    def open_settings(self):
-        messagebox.showinfo("Settings", "Settings dialog coming soon!")
-        
-    def open_manual(self):
-        self.notebook.select(self.manual_frame)
-        
-    def open_docs(self):
-        import webbrowser
-        webbrowser.open("https://github.com/yourusername/WinSet/docs/USER_GUIDE.md")
-        
-    def check_updates(self):
-        messagebox.showinfo("Updates", "You're running the latest version!")
-        
-    def show_about(self):
-        about_text = """WinSet v0.1.0
-
-Windows Configuration Toolkit
-
-A complete solution for backing up, restoring, and optimizing Windows settings.
-
-MIT License - Open Source
-
-Created with ❤️ for the Windows community"""
-        messagebox.showinfo("About WinSet", about_text)
-        
-    def select_all_categories(self):
-        for var in self.category_vars.values():
-            var.set(True)
-            
-    def clear_all_categories(self):
-        for var in self.category_vars.values():
-            var.set(False)
-            
-    def export_selected(self):
-        """Export settings for selected categories."""
-        selected_categories = [cat for cat, var in self.category_vars.items() if var.get()]
-        if not selected_categories:
-            messagebox.showwarning("No Selection", "Please select at least one category to export.")
-            return
-        
-        file_path = filedialog.asksaveasfilename(
-            defaultextension=".json",
-            filetypes=[("JSON files", "*.json")],
-            title="Export Selected Categories"
-        )
-        if not file_path:
-            return
-
-        settings_to_export = []
-        for category in selected_categories:
-            cat_settings = self.setting_loader.get_settings_for_category(category)
-            for setting in cat_settings:
-                # Read live value
-                current_val = self.registry_handler.read_value(setting.hive, setting.key_path, setting.value_name)
-                setting.value = current_val
-                settings_to_export.append(setting)
-        
-        success = self.exporter.export_profile(settings_to_export, file_path, profile_name="WinSet Category Export")
-        if success:
-            messagebox.showinfo("Export Successful", f"Exported {len(settings_to_export)} settings across {len(selected_categories)} categories.")
-        else:
-            messagebox.showerror("Export Failed", "There was an error exporting the profile.")
-
-# For testing
-if __name__ == "__main__":
-    root = tk.Tk()
-    app = MainWindow(root)
-    root.mainloop()
+        def task():
+            self.update_status("Creating Restore Point...", 0.5)
+            success = self.backup_manager.create_restore_point("WinSet Manual Restore Point")
+            if success:
+                self.update_status("Restore Point Created", 1.0)
+                messagebox.showinfo("Success", "System restore point created successfully.")
+            else:
+                messagebox.showerror("Error", "Failed to create restore point.")
+        self.run_async(task)

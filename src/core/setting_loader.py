@@ -43,10 +43,6 @@ class SettingLoader:
                 self.settings_by_category[enum_cat] = []
 
             for s_data in cat_data.get("settings", []):
-                # Create a RegistrySetting object
-                # Some fields might be missing depending on how clean the MD was
-                # We'll use defaults and sanitize
-                
                 try:
                     setting = RegistrySetting(
                         id=s_data.get("name", "unknown").lower().replace(" ", "_"),
@@ -59,14 +55,22 @@ class SettingLoader:
                         hive=s_data.get("hive", "HKEY_CURRENT_USER"),
                         key_path=s_data.get("key", "").replace("\\\\", "\\"),
                         value_name=s_data.get("value", ""),
-                        value_type=s_data.get("type", "REG_DWORD")
+                        value_type=s_data.get("type", "REG_DWORD"),
+                        options=None  # Will be parsed later
                     )
+                    
+                    # Store the values field if present
+                    if "values" in s_data:
+                        setting.values = s_data["values"]
+                    
                     self.settings_by_category[enum_cat].append(setting)
                 except Exception as e:
                     print(f"Error loading setting {s_data.get('name')}: {e}")
 
     def get_settings_for_category(self, category: SettingCategory) -> List[RegistrySetting]:
+        """Get all settings for a specific category."""
         return self.settings_by_category.get(category, [])
 
     def get_categories(self) -> List[SettingCategory]:
+        """Get list of available categories."""
         return list(self.settings_by_category.keys())

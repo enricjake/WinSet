@@ -22,12 +22,12 @@ def check_admin():
 
 def main():
     """Main entry point"""
-    # Create the root window once
+    # Create the root window but hide it initially
     root = tk.Tk()
+    root.withdraw()
     
     # Check if running as admin
     if not check_admin():
-        root.withdraw()
         result = messagebox.askyesno(
             "Administrator Rights Required",
             "WinSet needs administrator privileges to modify system settings.\n\n"
@@ -46,9 +46,9 @@ def main():
     # Import main window here to avoid circular imports
     from src.gui.main_window import MainWindow
     
-    # Create and run main window
-    root = tk.Tk()
+    # Root is already created, so just initialize MainWindow
     app = MainWindow(root)
+    root.deiconify() # Show the window now that it's ready
     root.mainloop()
 
 if __name__ == "__main__":

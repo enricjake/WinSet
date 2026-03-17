@@ -80,6 +80,7 @@ class RegistrySetting(Setting):
     value_type: str  # REG_SZ, REG_DWORD, etc.
     # Optional fields with defaults
     is_expanded: bool = False  # For REG_EXPAND_SZ
+    options: Optional[Dict[str, Any]] = None  # For multi-value settings (dropdown options)
 
     def __post_init__(self):
         """Validate after initialization"""

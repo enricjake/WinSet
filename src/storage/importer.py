@@ -60,15 +60,16 @@ class ProfileImporter:
                 is_rich = isinstance(sdata, dict) and "type" in sdata
                 
                 if is_rich:
-                    if sdata.get("type") == SettingType.REGISTRY.value:
+                    stype = sdata.get("type")
+                    if stype == SettingType.REGISTRY.value:
                         setting = RegistrySetting(
                             id=sdata["id"],
                             name=sdata["name"],
                             description=sdata["description"],
                             category=SettingCategory(sdata["category"]),
-                            setting_type=SettingType(sdata["type"]),
+                            setting_type=SettingType(stype),
                             value=sdata["value"],
-                            default_value=None,
+                            default_value=sdata.get("default_value"),
                             requires_admin=sdata.get("requires_admin", False),
                             requires_restart=sdata.get("requires_restart", False),
                             hive=sdata["hive"],
@@ -77,38 +78,14 @@ class ProfileImporter:
                             value_type=sdata["value_type"],
                             is_expanded=sdata.get("is_expanded", False)
                         )
-                    elif sdata.get("type") == SettingType.POWER.value:
-                        setting = PowerSetting(
-                            id=sdata["id"],
-                            name=sdata["name"],
-                            description=sdata["description"],
-                            category=SettingCategory(sdata["category"]),
-                            setting_type=SettingType(sdata["type"]),
-                            value=sdata["value"],
-                            default_value=None,
-                            plan_guid=sdata.get("plan_guid", "")
-                        )
-                    elif sdata.get("type") == SettingType.SYSTEM.value and "service_name" in sdata:
-                        setting = ServiceSetting(
-                            id=sdata["id"],
-                            name=sdata["name"],
-                            description=sdata["description"],
-                            category=SettingCategory(sdata["category"]),
-                            setting_type=SettingType(sdata["type"]),
-                            value=sdata["value"],
-                            default_value=None,
-                            service_name=sdata["service_name"],
-                            startup_type=sdata.get("startup_type", "Disabled")
-                        )
+                    # ... other types (Power, Service) could be added here
                 else:
-                    # Hydrate from master settings
-                    # Sid is often the ID or Name
+                    # Hydrate from master settings if only ID/Name and Value provided
                     lookup_key = sid.lower()
                     master = self._master_settings.get(lookup_key) or self._master_settings.get(lookup_key.replace("_", " "))
                     
                     if master:
                         value = sdata.get("value") if isinstance(sdata, dict) else sdata
-                        # Create appropriate type based on master
                         if isinstance(master, RegistrySetting):
                             setting = RegistrySetting(
                                 id=master.id,
@@ -123,7 +100,6 @@ class ProfileImporter:
                                 value_name=master.value_name,
                                 value_type=master.value_type
                             )
-                        # Handle other master types here if needed
                 
                 if setting:
                     profile.add_setting(setting)
