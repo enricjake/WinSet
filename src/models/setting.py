@@ -108,53 +108,19 @@ class RegistrySetting(Setting):
         return True
 
     def apply(self) -> bool:
-        """Apply to registry"""
-        try:
-            import winreg
-            
-            # Map hive string to winreg constant
-            hive_map = {
-                "HKEY_CURRENT_USER": winreg.HKEY_CURRENT_USER,
-                "HKEY_LOCAL_MACHINE": winreg.HKEY_LOCAL_MACHINE,
-                "HKEY_CLASSES_ROOT": winreg.HKEY_CLASSES_ROOT,
-                "HKEY_CURRENT_CONFIG": winreg.HKEY_CURRENT_CONFIG,
-                "HKEY_USERS": winreg.HKEY_USERS
-            }
-            
-            # Map type string to winreg constant
-            type_map = {
-                "REG_SZ": winreg.REG_SZ,
-                "REG_DWORD": winreg.REG_DWORD,
-                "REG_BINARY": winreg.REG_BINARY,
-                "REG_MULTI_SZ": winreg.REG_MULTI_SZ,
-                "REG_EXPAND_SZ": winreg.REG_EXPAND_SZ,
-                "REG_QWORD": winreg.REG_QWORD
-            }
-            
-            hive_constant = hive_map.get(self.hive)
-            type_constant = type_map.get(self.value_type)
-            
-            if not hive_constant or not type_constant:
-                raise ValueError(f"Invalid hive or type: {self.hive}, {self.value_type}")
-            
-            # Open key with write access
-            key = winreg.OpenKey(
-                hive_constant,
-                self.key_path,
-                0,
-                winreg.KEY_SET_VALUE
-            )
-            
-            # Set value
-            winreg.SetValueEx(key, self.value_name, 0, type_constant, self.value)
-            winreg.CloseKey(key)
-            
-            self.is_applied = True
-            return True
-            
-        except Exception as e:
-            print(f"Failed to apply {self.name}: {e}")
-            return False
+        """Apply to registry by delegating to the robust RegistryHandler."""
+        # Local import to avoid circular dependency issues at module level
+        from src.core.registry_handler import RegistryHandler
+
+        handler = RegistryHandler()
+        success = handler.write_value(
+            hive=self.hive,
+            key_path=self.key_path,
+            value_name=self.value_name,
+            value_type=self.value_type,
+            value=self.value,
+        )
+        return success
 
     def export(self) -> dict:
         """Export registry setting to dict"""

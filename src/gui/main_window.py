@@ -7,6 +7,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import sys
 import os
+import copy
 import threading
 import time
 from typing import Optional, Dict, Any, List
@@ -20,7 +21,7 @@ from src.core.registry_handler import RegistryHandler
 from src.core.powershell_handler import PowerShellHandler
 from src.core.setting_loader import SettingLoader
 from src.core.history_manager import HistoryManager
-from src.models.setting import RegistrySetting, SettingCategory, SettingType
+from src.models.setting import RegistrySetting, SettingCategory, SettingType, Setting
 
 
 class MainWindow:
@@ -937,6 +938,43 @@ class MainWindow:
                 
         threading.Thread(target=wrapper, daemon=True).start()
 
+    def _apply_settings_list(self, settings_list: List[Setting], profile_name: str):
+        """Applies a list of setting objects to the system."""
+        from src.models.profile import Profile
+        temp_profile = Profile(name=profile_name)
+        temp_profile.settings = {s.id: s for s in settings_list}
+        
+        # Check for restart requirement
+        for setting in temp_profile.settings.values():
+            if getattr(setting, 'requires_restart', False):
+                self.restart_pending = True
+                break
+
+        def task():
+            self.update_status("Creating Restore Point...", 0.2)
+            self.backup_manager.create_restore_point(f"WinSet Before Apply: {profile_name}")
+            self.update_status("Applying custom settings...", 0.5)
+            
+            results = temp_profile.apply_all(safe_mode=False)
+            
+            self.update_status("Apply Complete", 1.0)
+            messagebox.showinfo("Success", f"Applied {sum(1 for v in results.values() if v)} settings.")
+        
+        self.run_async(task)
+
+    def _save_settings_list_to_file(self, settings_list: List[Setting]):
+        """Shows a save dialog and exports a list of settings to a JSON file."""
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".json", filetypes=[("JSON files", "*.json")],
+            title="Save Custom Preset", initialdir=os.path.join(os.getcwd(), "presets")
+        )
+        if not file_path: return
+        name = os.path.basename(file_path).replace(".json", "")
+        if self.exporter.export_profile(settings_list, file_path, name):
+            messagebox.showinfo("Success", "Preset saved successfully!")
+        else:
+            messagebox.showerror("Error", "Failed to save preset.")
+
     def _prompt_for_restart(self):
         """Show a dialog recommending a system restart."""
         msg = "Some of the applied settings require a system restart to take full effect. Would you like to restart now?"
@@ -1148,35 +1186,37 @@ class MainWindow:
         footer = ttk.Frame(dialog, padding=20)
         footer.pack(fill=tk.X)
 
-        def save_preset():
-            file_path = filedialog.asksaveasfilename(
-                defaultextension=".json",
-                filetypes=[("JSON files", "*.json")],
-                title="Save Custom Preset",
-                initialdir=os.path.join(os.getcwd(), "presets"),
-                parent=dialog
-            )
-            if not file_path: return
-            
-            # Update setting objects with configured values
+        def get_final_settings() -> List[Setting]:
             final_settings = []
             for s in selected_settings:
                 if s.id in preset_values:
-                    s.value = preset_values[s.id]
-                    final_settings.append(s)
-            
-            name = os.path.basename(file_path).replace(".json", "")
-            if self.exporter.export_profile(final_settings, file_path, name):
-                messagebox.showinfo("Success", "Preset created successfully!", parent=dialog)
-                dialog.destroy()
-                # Refresh presets tab if needed
-                # self._create_presets_tab() # Would require full refresh logic
-            else:
-                messagebox.showerror("Error", "Failed to save preset.", parent=dialog)
+                    s_copy = copy.deepcopy(s)
+                    s_copy.value = preset_values[s.id]
+                    final_settings.append(s_copy)
+            return final_settings
+
+        def save_to_file():
+            final_settings = get_final_settings()
+            if not final_settings:
+                messagebox.showwarning("No Values Configured", "Cannot save an empty preset.", parent=dialog)
+                return
+            dialog.destroy()
+            self._save_settings_list_to_file(final_settings)
+
+        def apply_settings():
+            final_settings = get_final_settings()
+            if not final_settings:
+                messagebox.showwarning("No Values Configured", "Cannot apply an empty preset.", parent=dialog)
+                return
+            dialog.destroy()
+            self._apply_settings_list(final_settings, "Custom Preset")
+            if messagebox.askyesno("Save Preset?", "Settings applied. Would you also like to save these settings as a preset file for later use?"):
+                self._save_settings_list_to_file(final_settings)
 
         ttk.Button(footer, text="Back", command=lambda: [dialog.destroy(), self._show_preset_selection_step()]).pack(side=tk.LEFT)
         ttk.Button(footer, text="Cancel", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
-        ttk.Button(footer, text="💾 Save Preset", style="Accent.TButton", command=save_preset).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(footer, text="💾 Save to File...", command=save_to_file).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(footer, text="✅ Apply Settings", style="Accent.TButton", command=apply_settings).pack(side=tk.RIGHT, padx=5)
 
     def center_dialog(self, dialog):
         dialog.update_idletasks()
@@ -1255,7 +1295,7 @@ class MainWindow:
         # Populate settings grouped by category
         vars_map = {}
         settings_by_cat = {}
-        for s in profile.settings:
+        for s in profile.settings.values():
             # Handle category whether it's an object/enum or string
             cat = getattr(s, 'category', 'General')
             if hasattr(cat, 'value'): cat = cat.value
@@ -1294,7 +1334,7 @@ class MainWindow:
             dialog.destroy()
             
             # Apply only selected settings
-            profile.settings = selected_settings
+            profile.settings = {s.id: s for s in selected_settings}
             
             if messagebox.askyesno("Confirm", f"Apply {len(selected_settings)} settings from '{profile.name}'?"):
                 def task():
@@ -1307,7 +1347,7 @@ class MainWindow:
                 self.run_async(task)
         
         ttk.Button(footer, text="Cancel", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
-        ttk.Button(footer, text="Apply Selected", style="Accent.TButton", command=apply).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(footer, text="Confirm", style="Accent.TButton", command=apply).pack(side=tk.RIGHT, padx=5)
         
         def toggle_all(state):
             for var, _ in vars_map.values():

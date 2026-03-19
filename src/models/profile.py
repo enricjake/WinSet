@@ -4,7 +4,7 @@ from typing import Dict, List, Optional
 import json
 import hashlib
 
-from .setting import Setting
+from .setting import Setting, RegistrySetting, SettingCategory, SettingType
 
 @dataclass
 class Profile:
@@ -86,9 +86,30 @@ class Profile:
             tags=data.get("tags", [])
         )
         
-        # Reconstruct settings (simplified - real version would recreate objects)
         for sid, sdata in data.get("settings", {}).items():
-            # This would need proper reconstruction based on type
-            pass
+            setting_type_str = sdata.get("type")
+
+            if setting_type_str == SettingType.REGISTRY.value:
+                try:
+                    category_enum = SettingCategory(sdata.get("category", "system"))
+
+                    setting = RegistrySetting(
+                        id=sdata["id"],
+                        name=sdata["name"],
+                        description=sdata.get("description", ""),
+                        category=category_enum,
+                        setting_type=SettingType.REGISTRY,
+                        value=sdata.get("value"),
+                        default_value=None,  # Not available in export
+                        requires_admin=sdata.get("requires_admin", False),
+                        requires_restart=sdata.get("requires_restart", False),
+                        hive=sdata["hive"],
+                        key_path=sdata["key_path"],
+                        value_name=sdata["value_name"],
+                        value_type=sdata["value_type"],
+                    )
+                    profile.add_setting(setting)
+                except (KeyError, ValueError) as e:
+                    print(f"Skipping setting '{sid}' due to missing/invalid data in profile: {e}")
             
         return profile

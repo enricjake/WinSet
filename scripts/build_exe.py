@@ -24,8 +24,13 @@ def clean_dist():
         # Paths are resolved relative to the project root
         path = PROJECT_ROOT / folder
         if path.exists():
-            shutil.rmtree(path)
-            print(f"Cleaned {folder}/")
+            try:
+                shutil.rmtree(path)
+                print(f"Cleaned {folder}/")
+            except PermissionError:
+                print(f"Error: Access denied while cleaning '{folder}'.")
+                print("Please ensure 'WinSet.exe' is closed and try again.")
+                sys.exit(1)
 
 
 def build():
