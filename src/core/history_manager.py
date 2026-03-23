@@ -4,12 +4,20 @@ HistoryManager for WinSet - logs all setting changes to a persistent database.
 
 import sqlite3
 import os
-from datetime import datetime
-from typing import List, Tuple, Any, Optional
+import time
+from datetime import datetime, timedelta
+from typing import List, Tuple, Any, Optional, Dict
+from contextlib import contextmanager
 
 
 class HistoryManager:
     """Handles logging and retrieving setting changes from a local SQLite DB."""
+
+    # Maximum number of history entries to keep (prevents database bloat)
+    MAX_HISTORY_ENTRIES = 10000
+    
+    # Days to keep history by default
+    DEFAULT_RETENTION_DAYS = 90
 
     def __init__(self, db_path: Optional[str] = None):
         if db_path is None:
@@ -23,7 +31,17 @@ class HistoryManager:
             self.db_path = db_path  # Allow override for testing
 
         self._conn = sqlite3.connect(self.db_path, check_same_thread=False)
+        self._conn.execute("PRAGMA journal_mode=WAL")  # Better concurrency
         self._create_table()
+        self._create_indexes()
+
+    def __enter__(self):
+        """Support context manager usage."""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Ensure connection is closed when exiting context."""
+        self.close()
 
     def _create_table(self):
         """Create the history table if it doesn't exist."""
@@ -40,50 +58,193 @@ class HistoryManager:
                 value_type TEXT NOT NULL,
                 hive TEXT NOT NULL,
                 key_path TEXT NOT NULL,
-                value_name TEXT NOT NULL
+                value_name TEXT NOT NULL,
+                success INTEGER DEFAULT 1
             )
         """
         )
         self._conn.commit()
 
-    def log_change(self, setting: Any, old_value: Any, new_value: Any):
-        """Log a single setting change to the database."""
+    def _create_indexes(self):
+        """Create indexes for better query performance."""
         cursor = self._conn.cursor()
-        old_val_str = str(old_value) if old_value is not None else "N/A"
-        new_val_str = str(new_value) if new_value is not None else "N/A"
+        cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_timestamp 
+            ON changes(timestamp DESC)
+        """)
+        cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_setting_id 
+            ON changes(setting_id)
+        """)
+        cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_success 
+            ON changes(success)
+        """)
+        self._conn.commit()
 
+    def log_change(self, setting: Any, old_value: Any, new_value: Any, success: bool = True):
+        """
+        Log a single setting change to the database.
+        
+        Args:
+            setting: The Setting object being changed
+            old_value: Previous value
+            new_value: New value
+            success: Whether the operation succeeded
+        """
+        # Sanitize values to prevent SQL injection (though parameterized queries handle this)
+        old_val_str = self._sanitize_value(old_value)
+        new_val_str = self._sanitize_value(new_value)
+        
+        # Limit string lengths to prevent excessive storage
+        old_val_str = old_val_str[:1000] if old_val_str else "N/A"
+        new_val_str = new_val_str[:1000] if new_val_str else "N/A"
+
+        cursor = self._conn.cursor()
         cursor.execute(
             """
             INSERT INTO changes (
                 timestamp, setting_id, setting_name, old_value, new_value,
-                value_type, hive, key_path, value_name
+                value_type, hive, key_path, value_name, success
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
             (
                 datetime.now().isoformat(sep=" ", timespec="seconds"),
-                setting.id,
-                setting.name,
+                getattr(setting, 'id', 'unknown')[:100],
+                getattr(setting, 'name', 'unknown')[:200],
                 old_val_str,
                 new_val_str,
-                setting.value_type,
-                setting.hive,
-                setting.key_path,
-                setting.value_name,
+                getattr(setting, 'value_type', 'unknown')[:50],
+                getattr(setting, 'hive', 'unknown')[:50],
+                getattr(setting, 'key_path', 'unknown')[:512],
+                getattr(setting, 'value_name', 'unknown')[:255],
+                1 if success else 0,
             ),
         )
         self._conn.commit()
+        
+        # Prune old entries if we have too many
+        self._prune_if_needed()
 
-    def get_history(self) -> List[Tuple[Any, ...]]:
-        """Retrieve all changes, sorted by most recent first."""
+    def _sanitize_value(self, value: Any) -> str:
+        """Safely convert a value to string for storage."""
+        if value is None:
+            return "N/A"
+        if isinstance(value, (int, float, bool)):
+            return str(value)
+        if isinstance(value, (bytes, bytearray)):
+            return f"<binary data: {len(value)} bytes>"
+        if isinstance(value, dict):
+            # Limit dictionary representation
+            return str({k: str(v)[:100] for k, v in list(value.items())[:10]})[:500]
+        if isinstance(value, list):
+            # Limit list representation
+            return str([str(v)[:100] for v in value[:10]])[:500]
+        return str(value)[:1000]
+
+    def _prune_if_needed(self):
+        """Check if we need to prune old entries and do so."""
+        cursor = self._conn.cursor()
+        
+        # Get count of entries
+        cursor.execute("SELECT COUNT(*) FROM changes")
+        count = cursor.fetchone()[0]
+        
+        if count > self.MAX_HISTORY_ENTRIES:
+            # Delete oldest entries to get back to 80% of max
+            to_delete = count - int(self.MAX_HISTORY_ENTRIES * 0.8)
+            cursor.execute(
+                "DELETE FROM changes WHERE id IN (SELECT id FROM changes ORDER BY timestamp ASC LIMIT ?)",
+                (to_delete,)
+            )
+            self._conn.commit()
+            
+            # Vacuum to reclaim space
+            self._conn.execute("VACUUM")
+
+    def prune_old_history(self, days_to_keep: int = None):
+        """
+        Delete history entries older than specified days.
+        
+        Args:
+            days_to_keep: Number of days to keep (default: DEFAULT_RETENTION_DAYS)
+        """
+        if days_to_keep is None:
+            days_to_keep = self.DEFAULT_RETENTION_DAYS
+            
+        cursor = self._conn.cursor()
+        cutoff_date = (datetime.now() - timedelta(days=days_to_keep)).isoformat()
+        
+        cursor.execute(
+            "DELETE FROM changes WHERE timestamp < ?",
+            (cutoff_date,)
+        )
+        deleted = cursor.rowcount
+        self._conn.commit()
+        
+        if deleted > 0:
+            # Vacuum to reclaim space
+            self._conn.execute("VACUUM")
+        
+        return deleted
+
+    def get_history(self, limit: int = 100, success_only: bool = False) -> List[Tuple[Any, ...]]:
+        """
+        Retrieve recent changes, sorted by most recent first.
+        
+        Args:
+            limit: Maximum number of entries to return
+            success_only: Only return successful changes
+            
+        Returns:
+            List of history entries
+        """
+        cursor = self._conn.cursor()
+        
+        if success_only:
+            cursor.execute(
+                "SELECT id, timestamp, setting_name, old_value, new_value, success "
+                "FROM changes WHERE success = 1 ORDER BY timestamp DESC LIMIT ?",
+                (limit,)
+            )
+        else:
+            cursor.execute(
+                "SELECT id, timestamp, setting_name, old_value, new_value, success "
+                "FROM changes ORDER BY timestamp DESC LIMIT ?",
+                (limit,)
+            )
+        return cursor.fetchall()
+
+    def get_history_by_setting(self, setting_id: str, limit: int = 50) -> List[Tuple[Any, ...]]:
+        """
+        Retrieve history for a specific setting.
+        
+        Args:
+            setting_id: The ID of the setting
+            limit: Maximum number of entries
+            
+        Returns:
+            List of history entries for that setting
+        """
         cursor = self._conn.cursor()
         cursor.execute(
-            "SELECT id, timestamp, setting_name, old_value, new_value FROM changes ORDER BY timestamp DESC"
+            "SELECT id, timestamp, old_value, new_value, success "
+            "FROM changes WHERE setting_id = ? ORDER BY timestamp DESC LIMIT ?",
+            (setting_id[:100], limit)
         )
         return cursor.fetchall()
 
     def get_change_details(self, change_id: int) -> Optional[Tuple[Any, ...]]:
-        """Get the details needed to revert a specific change by its ID."""
+        """
+        Get the details needed to revert a specific change by its ID.
+        
+        Args:
+            change_id: The ID of the change to retrieve
+            
+        Returns:
+            Tuple of (hive, key_path, value_name, value_type, old_value) or None
+        """
         cursor = self._conn.cursor()
         cursor.execute(
             "SELECT hive, key_path, value_name, value_type, old_value FROM changes WHERE id = ?",
@@ -91,6 +252,91 @@ class HistoryManager:
         )
         return cursor.fetchone()
 
+    def get_statistics(self) -> Dict[str, Any]:
+        """
+        Get statistics about the history database.
+        
+        Returns:
+            Dictionary with statistics
+        """
+        cursor = self._conn.cursor()
+        
+        cursor.execute("SELECT COUNT(*) FROM changes")
+        total = cursor.fetchone()[0]
+        
+        cursor.execute("SELECT COUNT(*) FROM changes WHERE success = 1")
+        successful = cursor.fetchone()[0]
+        
+        cursor.execute("SELECT COUNT(DISTINCT setting_id) FROM changes")
+        unique_settings = cursor.fetchone()[0]
+        
+        cursor.execute("SELECT MIN(timestamp), MAX(timestamp) FROM changes")
+        first, last = cursor.fetchone()
+        
+        # Get database size
+        db_size = os.path.getsize(self.db_path) if os.path.exists(self.db_path) else 0
+        
+        return {
+            "total_entries": total,
+            "successful_changes": successful,
+            "failed_changes": total - successful,
+            "unique_settings": unique_settings,
+            "first_entry": first,
+            "last_entry": last,
+            "database_size_bytes": db_size,
+            "database_size_mb": round(db_size / (1024 * 1024), 2)
+        }
+
+    def export_history(self, filepath: str, format: str = "json") -> bool:
+        """
+        Export history to a file for backup or analysis.
+        
+        Args:
+            filepath: Path to export file
+            format: Export format ('json' or 'csv')
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        import csv
+        import json
+        
+        cursor = self._conn.cursor()
+        cursor.execute(
+            "SELECT id, timestamp, setting_name, old_value, new_value, success FROM changes "
+            "ORDER BY timestamp DESC"
+        )
+        rows = cursor.fetchall()
+        
+        try:
+            if format == "json":
+                data = [
+                    {
+                        "id": row[0],
+                        "timestamp": row[1],
+                        "setting_name": row[2],
+                        "old_value": row[3],
+                        "new_value": row[4],
+                        "success": bool(row[5])
+                    }
+                    for row in rows
+                ]
+                with open(filepath, 'w', encoding='utf-8') as f:
+                    json.dump(data, f, indent=2, ensure_ascii=False)
+            elif format == "csv":
+                with open(filepath, 'w', newline='', encoding='utf-8') as f:
+                    writer = csv.writer(f)
+                    writer.writerow(["ID", "Timestamp", "Setting", "Old Value", "New Value", "Success"])
+                    writer.writerows(rows)
+            else:
+                return False
+            return True
+        except Exception as e:
+            print(f"Export failed: {e}")
+            return False
+
     def close(self):
         """Close the database connection."""
-        self._conn.close()
+        if self._conn:
+            self._conn.close()
+            self._conn = None

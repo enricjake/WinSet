@@ -3,11 +3,12 @@ Registry handler for WinSet - reads and writes Windows Registry values.
 """
 
 import winreg
-from typing import Any, Optional
+import re
+from typing import Any, Optional, List
 
 
 class RegistryHandler:
-    """Handles reading and writing Windows Registry values."""
+    """Handles reading and writing Windows Registry values securely."""
 
     # Maps hive name strings to winreg constants
     HIVE_MAP = {
@@ -27,6 +28,68 @@ class RegistryHandler:
         "REG_EXPAND_SZ": winreg.REG_EXPAND_SZ,
         "REG_QWORD": winreg.REG_QWORD,
     }
+
+    # Sensitive registry paths to block
+    BLOCKED_PATHS = [
+        r'\\Security\\',
+        r'\\SAM\\',
+        r'\\System\\CurrentControlSet\\Control\\SecurePipeServers',
+        r'\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon\\SpecialAccounts',
+    ]
+
+    def _validate_key_path(self, key_path: str) -> bool:
+        """
+        Validate registry key path to prevent security issues.
+        
+        Args:
+            key_path: Registry key path to validate
+            
+        Returns:
+            True if valid, raises ValueError if invalid
+        """
+        # Check length
+        if len(key_path) > 512:
+            raise ValueError(f"Key path too long: {len(key_path)} chars (max 512)")
+        
+        # Prevent path traversal
+        if ".." in key_path:
+            raise ValueError(f"Key path contains path traversal: {key_path}")
+        
+        # Block UNC paths
+        if key_path.startswith("\\\\"):
+            raise ValueError(f"Key path starts with network path: {key_path}")
+        
+        # Block sensitive paths
+        for blocked in self.BLOCKED_PATHS:
+            if re.search(blocked, key_path, re.IGNORECASE):
+                raise ValueError(f"Access to blocked registry path: {key_path}")
+        
+        # Check for suspicious characters
+        if not re.match(r'^[\w\\\- ]+$', key_path):
+            # Allow some additional characters in paths
+            if not re.match(r'^[a-zA-Z0-9\\\-_ ]+$', key_path):
+                raise ValueError(f"Invalid characters in key path: {key_path}")
+        
+        return True
+
+    def _validate_value_name(self, value_name: str) -> bool:
+        """
+        Validate registry value name.
+        
+        Args:
+            value_name: Value name to validate
+            
+        Returns:
+            True if valid, raises ValueError if invalid
+        """
+        if len(value_name) > 255:
+            raise ValueError(f"Value name too long: {len(value_name)} chars (max 255)")
+        
+        # Value names can contain most characters, but block some
+        if value_name.startswith("."):
+            raise ValueError(f"Value name starts with dot: {value_name}")
+        
+        return True
 
     def _get_hive_constant(self, hive: str) -> int:
         """Convert a hive name string to the corresponding winreg constant.
@@ -83,6 +146,10 @@ class RegistryHandler:
             The stored value, or None if it could not be read.
         """
         try:
+            # Validate inputs
+            self._validate_key_path(key_path)
+            self._validate_value_name(value_name)
+            
             hive_constant = self._get_hive_constant(hive)
             key = winreg.OpenKey(hive_constant, key_path, 0, winreg.KEY_READ)
             value, _ = winreg.QueryValueEx(key, value_name)
@@ -113,6 +180,14 @@ class RegistryHandler:
             True on success, False on failure.
         """
         try:
+            # Validate inputs
+            self._validate_key_path(key_path)
+            self._validate_value_name(value_name)
+            
+            # Validate value based on type
+            if not self._validate_value(value_type, value):
+                return False
+            
             hive_constant = self._get_hive_constant(hive)
             type_constant = self._get_type_constant(value_type)
 
@@ -129,6 +204,7 @@ class RegistryHandler:
         except (FileNotFoundError, OSError) as e:
             # Key may not exist — try creating it
             try:
+                self._validate_key_path(key_path)
                 hive_constant = self._get_hive_constant(hive)
                 type_constant = self._get_type_constant(value_type)
                 key = winreg.CreateKey(hive_constant, key_path)
@@ -140,6 +216,50 @@ class RegistryHandler:
                 return False
         except ValueError as e:
             print(f"Invalid hive or type: {e}")
+            return False
+
+    def _validate_value(self, value_type: str, value: Any) -> bool:
+        """
+        Validate a registry value based on its type.
+        
+        Args:
+            value_type: Registry type
+            value: The value to validate
+            
+        Returns:
+            True if valid, False otherwise
+        """
+        try:
+            if value_type == "REG_DWORD":
+                if not isinstance(value, int):
+                    return False
+                if value < 0 or value > 4294967295:
+                    return False
+            elif value_type in ["REG_SZ", "REG_EXPAND_SZ"]:
+                if not isinstance(value, str):
+                    return False
+                if len(value) > 32767:
+                    return False
+            elif value_type == "REG_BINARY":
+                if not isinstance(value, (bytes, bytearray)):
+                    return False
+                if len(value) > 1024 * 1024:  # 1MB max
+                    return False
+            elif value_type == "REG_MULTI_SZ":
+                if not isinstance(value, list):
+                    return False
+                if len(value) > 100:  # Max strings
+                    return False
+                for s in value:
+                    if len(s) > 1000:
+                        return False
+            elif value_type == "REG_QWORD":
+                if not isinstance(value, int):
+                    return False
+                if value < 0 or value > 18446744073709551615:
+                    return False
+            return True
+        except Exception:
             return False
 
     def delete_value(self, hive: str, key_path: str, value_name: str) -> bool:
@@ -154,6 +274,10 @@ class RegistryHandler:
             True on success, False on failure.
         """
         try:
+            # Validate inputs
+            self._validate_key_path(key_path)
+            self._validate_value_name(value_name)
+            
             hive_constant = self._get_hive_constant(hive)
             key = winreg.OpenKey(hive_constant, key_path, 0, winreg.KEY_SET_VALUE)
             winreg.DeleteValue(key, value_name)
@@ -161,4 +285,24 @@ class RegistryHandler:
             return True
         except (FileNotFoundError, OSError, ValueError) as e:
             print(f"Failed to delete registry value '{value_name}': {e}")
+            return False
+
+    def key_exists(self, hive: str, key_path: str) -> bool:
+        """
+        Check if a registry key exists.
+        
+        Args:
+            hive: Registry hive name
+            key_path: Path to the registry key
+            
+        Returns:
+            True if the key exists, False otherwise
+        """
+        try:
+            self._validate_key_path(key_path)
+            hive_constant = self._get_hive_constant(hive)
+            key = winreg.OpenKey(hive_constant, key_path, 0, winreg.KEY_READ)
+            winreg.CloseKey(key)
+            return True
+        except (FileNotFoundError, OSError, ValueError):
             return False
