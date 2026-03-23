@@ -4,6 +4,7 @@ Preset Manager for WinSet - manages preset configurations.
 
 import json
 import os
+import re
 import tempfile
 from pathlib import Path
 from typing import List, Dict, Optional, Any, Tuple
@@ -53,13 +54,18 @@ class PresetManager:
             # Check if path is within application directory or user's WinSet folder
             base_dir = Path(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))).resolve()
             user_winset = Path(os.path.expanduser("~")) / "Documents" / "WinSet" / "presets"
-            user_winset.resolve()
+            user_winset = user_winset.resolve()
             
-            if base_dir not in safe_path.parents and safe_path != base_dir:
-                if user_winset not in safe_path.parents and safe_path != user_winset:
-                    raise ValueError(
-                        f"Preset path '{path}' is outside allowed directories"
-                    )
+            # Allow temporary directories for testing
+            temp_dir = Path(tempfile.gettempdir()).resolve()
+            is_temp_path = temp_dir in safe_path.parents or safe_path == temp_dir
+            
+            if not is_temp_path:
+                if base_dir not in safe_path.parents and safe_path != base_dir:
+                    if user_winset not in safe_path.parents and safe_path != user_winset:
+                        raise ValueError(
+                            f"Preset path '{path}' is outside allowed directories"
+                        )
             
             # Create directory if it doesn't exist
             os.makedirs(safe_path, exist_ok=True)
@@ -120,6 +126,10 @@ class PresetManager:
         
         # Validate setting names
         for setting_id, setting_value in data['settings'].items():
+            # Sanitize setting ID to prevent injection
+            if not self._is_safe_setting_id(setting_id):
+                return False
+            
             if len(setting_id) > 100:
                 return False
             
@@ -133,6 +143,28 @@ class PresetManager:
                     return False
         
         return True
+    
+    def _is_safe_setting_id(self, setting_id: str) -> bool:
+        """
+        Check if a setting ID is safe (no injection characters).
+        
+        Args:
+            setting_id: The setting ID to check
+            
+        Returns:
+            True if safe, False otherwise
+        """
+        # Block dangerous characters
+        dangerous_chars = [';', '--', '..', '/', '\\', '"', "'", '*', 'DROP', 'DELETE', 'INSERT', 'UPDATE']
+        
+        setting_lower = setting_id.lower()
+        for char in dangerous_chars:
+            if char in setting_lower:
+                return False
+        
+        # Only allow alphanumeric, underscores, and hyphens
+        import re
+        return bool(re.match(r'^[a-zA-Z0-9_-]+$', setting_id))
     
     def get_preset_info(self, preset_id: str) -> Optional[Dict[str, Any]]:
         """
@@ -291,6 +323,15 @@ class PresetManager:
             print(f"Error deleting preset: {e}")
             return False
     
+    def get_preset_list(self) -> List[str]:
+        """
+        Get a list of all preset IDs.
+        
+        Returns:
+            List of preset IDs
+        """
+        return list(self.presets.keys())
+    
     def get_preset_usage(self, preset_id: str) -> Optional[int]:
         """
         Get usage count for a preset (from history).
@@ -304,47 +345,3 @@ class PresetManager:
         # This would integrate with HistoryManager
         # Placeholder for now
         return 0
-    # src/presets/preset_manager.py
-
-    def _validate_preset_path(self, path: str) -> str:
-        """
-        Validate a preset directory path for security.
-        
-        Args:
-            path: The path to validate
-        
-        Returns:
-            The validated absolute path
-        
-        Raises:
-            ValueError: If the path is unsafe
-        """
-        try:
-            safe_path = Path(path).resolve()
-            
-            # Check if path is within application directory or user's WinSet folder
-            base_dir = Path(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))).resolve()
-            user_winset = Path(os.path.expanduser("~")) / "Documents" / "WinSet" / "presets"
-            user_winset.resolve()
-            
-            # Allow temporary directories for testing
-            temp_dir = Path(tempfile.gettempdir()).resolve()
-            is_temp_path = temp_dir in safe_path.parents or safe_path == temp_dir
-            
-            if not is_temp_path:
-                if base_dir not in safe_path.parents and safe_path != base_dir:
-                    if user_winset not in safe_path.parents and safe_path != user_winset:
-                        raise ValueError(
-                            f"Preset path '{path}' is outside allowed directories"
-                        )
-            
-            # Create directory if it doesn't exist
-            os.makedirs(safe_path, exist_ok=True)
-            
-            return str(safe_path)
-        
-        except Exception as e:
-            raise ValueError(f"Invalid preset path: {e}")
-
-# Add missing import at the top of the file
-import re

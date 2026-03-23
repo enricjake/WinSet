@@ -59,7 +59,8 @@ class HistoryManager:
                 hive TEXT NOT NULL,
                 key_path TEXT NOT NULL,
                 value_name TEXT NOT NULL,
-                success INTEGER DEFAULT 1
+                success INTEGER DEFAULT 1,
+                reverted INTEGER DEFAULT 0
             )
         """
         )
@@ -345,8 +346,9 @@ class HistoryManager:
             True if clear was successful, False otherwise
         """
         try:
-            self.history.clear()
-            self._save_history()
+            cursor = self._conn.cursor()
+            cursor.execute("DELETE FROM changes")
+            self._conn.commit()
             return True
         except Exception:
             return False
@@ -362,20 +364,51 @@ class HistoryManager:
             True if revert was successful, False otherwise
         """
         try:
-            # Find the change in history
-            for change in self.history:
-                if change[0] == change_id:
-                    # change format: (id, setting_id, old_value, new_value, timestamp, ...)
-                    # You'll need to adjust based on your actual history structure
-                    setting_id, old_value = change[1], change[2]
-                    # Revert the change
-                    # This assumes you have a way to get the setting object
-                    return True
-            return False
+            # Get change details
+            details = self.get_change_details(change_id)
+            if not details:
+                return False
+            
+            hive, key_path, value_name, value_type, old_value = details
+            
+            # Import here to avoid circular imports
+            from .registry_handler import RegistryHandler
+            handler = RegistryHandler()
+            
+            # Convert old_value back to proper type
+            converted_value = self._convert_string_to_value(old_value, value_type)
+            
+            # Revert the change
+            success = handler.write_value(hive, key_path, value_name, value_type, converted_value)
+            
+            if success:
+                # Mark the change as reverted in database
+                cursor = self._conn.cursor()
+                cursor.execute("UPDATE changes SET reverted = 1 WHERE id = ?", (change_id,))
+                self._conn.commit()
+            
+            return success
         except Exception:
             return False
+    
+    def _convert_string_to_value(self, value_str: str, value_type: str) -> Any:
+        """Convert string value back to proper type."""
+        if value_str == "N/A":
+            return None
+        
+        try:
+            if value_type == "REG_DWORD":
+                return int(value_str)
+            elif value_type == "REG_QWORD":
+                return int(value_str)
+            elif value_type in ["REG_SZ", "REG_EXPAND_SZ"]:
+                return value_str
+            else:
+                return value_str
+        except (ValueError, TypeError):
+            return value_str
 
-    def get_changes_by_setting(self, setting_id: str) -> List:
+    def get_changes_by_setting(self, setting_id: str) -> List[Tuple[Any, ...]]:
         """
         Get all changes for a specific setting.
         
@@ -385,7 +418,13 @@ class HistoryManager:
         Returns:
             List of changes for the specified setting
         """
-        return [change for change in self.history if change[1] == setting_id]
+        cursor = self._conn.cursor()
+        cursor.execute(
+            "SELECT id, timestamp, old_value, new_value, reverted "
+            "FROM changes WHERE setting_id = ? ORDER BY timestamp DESC",
+            (setting_id[:100],)
+        )
+        return cursor.fetchall()
 
     def close(self):
         """Close the database connection."""

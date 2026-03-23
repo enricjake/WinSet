@@ -309,7 +309,26 @@ class RegistryHandler:
         
         # src/core/registry_handler.py
 
-    def write_multiple_values(self, operations: List[tuple]) -> List[tuple]:
+    def read_multiple_values(self, hive: str, key_path: str, value_names: List[str]) -> dict:
+        """
+        Read multiple registry values from the same key.
+        
+        Args:
+            hive: Registry hive name
+            key_path: Path to the registry key
+            value_names: List of value names to read
+        
+        Returns:
+            Dictionary with value names as keys and their values as values (None if not found)
+        """
+        results = {}
+        
+        for value_name in value_names:
+            results[value_name] = self.read_value(hive, key_path, value_name)
+        
+        return results
+    
+    def write_multiple_values(self, operations: List[tuple]) -> dict:
         """
         Write multiple registry values in bulk.
         
@@ -317,9 +336,9 @@ class RegistryHandler:
             operations: List of tuples (hive, key_path, value_name, value_type, value)
         
         Returns:
-            List of (operation_index, success, error_message) results
+            Dictionary with operation indices as keys and boolean success as values
         """
-        results = []
+        results = {}
         
         for i, op in enumerate(operations):
             try:
@@ -327,12 +346,12 @@ class RegistryHandler:
                     hive, key_path, value_name, value_type, value = op
                 else:
                     # Handle different tuple lengths if needed
-                    results.append((i, False, "Invalid operation format"))
+                    results[i] = False
                     continue
                     
                 success = self.write_value(hive, key_path, value_name, value_type, value)
-                results.append((i, success, None if success else "Write failed"))
-            except Exception as e:
-                results.append((i, False, str(e)))
+                results[i] = success
+            except Exception:
+                results[i] = False
         
         return results
