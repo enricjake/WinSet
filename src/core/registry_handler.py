@@ -306,3 +306,27 @@ class RegistryHandler:
             return True
         except (FileNotFoundError, OSError, ValueError):
             return False
+        
+        # src/core/registry_handler.py
+
+    def write_multiple_values(self, operations: List[tuple]) -> List[tuple]:
+        """
+        Write multiple registry values in bulk.
+        
+        Args:
+            operations: List of tuples (hive, key_path, value_name, value_type, value)
+        
+        Returns:
+            List of (operation_index, success, error_message) results
+        """
+        results = []
+        
+        for i, op in enumerate(operations):
+            try:
+                hive, key_path, value_name, value_type, value = op
+                success = self.write_value(hive, key_path, value_name, value_type, value)
+                results.append((i, success, None if success else "Write failed"))
+            except Exception as e:
+                results.append((i, False, str(e)))
+        
+        return results

@@ -334,6 +334,60 @@ class HistoryManager:
         except Exception as e:
             print(f"Export failed: {e}")
             return False
+        
+        # src/history/history_manager.py
+
+    def revert_change(self, change_id: int) -> bool:
+        """
+        Revert a specific change by ID.
+        
+        Args:
+            change_id: The ID of the change to revert
+        
+        Returns:
+            True if revert was successful, False otherwise
+        """
+        try:
+            # Find the change
+            for change in self.history:
+                if change[0] == change_id:
+                    # Revert the change
+                    return self.registry_handler.write_value(
+                        change[3],  # hive
+                        change[4],  # key_path
+                        change[5],  # value_name
+                        change[6],  # value_type
+                        change[2]   # old_value
+                    )
+            return False
+        except Exception:
+            return False
+
+    def get_changes_by_setting(self, setting_id: str) -> List[tuple]:
+        """
+        Get all changes for a specific setting.
+        
+        Args:
+            setting_id: The setting ID to filter by
+        
+        Returns:
+            List of changes for the specified setting
+        """
+        return [change for change in self.history if change[1] == setting_id]
+
+    def clear_history(self) -> bool:
+        """
+        Clear all history.
+        
+        Returns:
+            True if clear was successful, False otherwise
+        """
+        try:
+            self.history.clear()
+            self._save_history()
+            return True
+        except Exception:
+            return False
 
     def close(self):
         """Close the database connection."""

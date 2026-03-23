@@ -292,6 +292,8 @@ class MainWindow:
         ttk.Button(tools_frame, text="🔍 Programs & Features", command=lambda: self.open_system_tool("appwiz.cpl"), width=20).pack(fill=tk.X, pady=(0, 10))
         ttk.Button(tools_frame, text="🌐 Network Settings", command=lambda: self.open_system_tool("ncpa.cpl"), width=20).pack(fill=tk.X, pady=(0, 10))
 
+    # src/gui/main_window.py
+
     def _create_presets_tab(self):
         """Create presets tab content"""
         container = ttk.Frame(self.presets_frame)
@@ -302,48 +304,32 @@ class MainWindow:
         # Action Bar
         action_frame = ttk.Frame(container)
         action_frame.pack(fill=tk.X, pady=(0, 15))
-        ttk.Button(action_frame, text="➕ Create Custom Preset", command=self.create_custom_preset, style="Accent.TButton").pack(side=tk.LEFT)
-
+        ttk.Button(action_frame, text="\u2795 Create Custom Preset", command=self.create_custom_preset, style="Accent.TButton").pack(side=tk.LEFT)
+        
         # Presets grid
         presets_frame = ttk.Frame(container)
         presets_frame.pack(fill=tk.BOTH, expand=True)
         
         # Default presets
         presets = [
-            {"id": "gaming", "title": "🎮 Gaming Mode", "desc": "Optimize system for gaming performance"},
-            {"id": "developer", "title": "💻 Developer Mode", "desc": "Configure for development workflows"},
-            {"id": "privacy", "title": "🔒 Privacy Max", "desc": "Maximum privacy and security settings"},
-            {"id": "performance", "title": "⚡ Peak Performance", "desc": "Unlock full system performance"},
-            {"id": "battery", "title": "🔋 Battery Saver", "desc": "Optimize for extended battery life"}
+            {"id": "gaming", "title": "\U0001f3ae Gaming Mode", "desc": "Optimize system for gaming performance"},
+            {"id": "developer", "title": "\U0001f4bb Developer Mode", "desc": "Configure for development workflows"},
+            {"id": "privacy", "title": "\U0001f512 Privacy Max", "desc": "Maximum privacy and security settings"},
+            {"id": "performance", "title": "\u26a1 Peak Performance", "desc": "Unlock full system performance"},
+            {"id": "battery", "title": "\U0001f50b Battery Saver", "desc": "Optimize for extended battery life"}
         ]
         
         # Dynamically load additional presets
         existing_ids = {p["id"] for p in presets}
-        preset_ids = self.preset_manager.get_preset_list()
-        for pid in preset_ids:
-            if pid in existing_ids:
-                continue
-            success, msg, profile = self.preset_manager.load_preset(pid)
-            if success and profile:
+        # Fix: Use get_preset_info() instead of get_preset_list()
+        preset_info = self.preset_manager.get_preset_info()
+        for preset_id, info in preset_info.items():
+            if preset_id not in existing_ids:
                 presets.append({
-                    "id": pid,
-                    "title": profile.name.replace("_", " ").title(),
-                    "desc": getattr(profile, 'description', f"Applies the {profile.name} configuration.")
+                    "id": preset_id,
+                    "title": info.get("name", preset_id),
+                    "desc": info.get("description", "")
                 })
-        
-        for i, p in enumerate(presets):
-            row = i // 2
-            col = i % 2
-            
-            preset_card = ttk.LabelFrame(presets_frame, text="", padding=15, relief=tk.RIDGE, borderwidth=1)
-            preset_card.grid(row=row, column=col, sticky="nsew", padx=10, pady=10)
-            presets_frame.grid_rowconfigure(row, weight=1)
-            presets_frame.grid_columnconfigure(col, weight=1)
-            
-            ttk.Label(preset_card, text=p["title"], style="Bold.TLabel").pack(anchor="w", pady=(0, 5))
-            ttk.Label(preset_card, text=p["desc"], style="Description.TLabel").pack(anchor="w", pady=(0, 10))
-            ttk.Button(preset_card, text="Apply Preset", 
-                      command=lambda pid=p["id"]: self.apply_preset(pid)).pack(fill=tk.X)
 
     def _create_manual_tab(self):
         """Create manual configuration tab"""
