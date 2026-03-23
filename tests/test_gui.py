@@ -1,26 +1,45 @@
-import tkinter as tk
-from unittest.mock import Mock, patch
+"""
+Tests for GUI components.
+"""
+
 import pytest
+import sys
+import os
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+
 from src.gui.main_window import MainWindow
+import tkinter as tk
 
-@pytest.fixture
-def app():
-    """Fixture to create a MainWindow instance for testing."""
-    root = tk.Tk()
-    # Prevent the window from showing up during tests
-    root.withdraw()
-    app = MainWindow(root)
-    yield app
-    # Clean up after tests
-    root.destroy()
 
-def test_manual_tab_refresh(app):
-    """Test that refresh_manual_config is called when the manual tab is selected."""
-    with patch.object(app, 'refresh_manual_config', wraps=app.refresh_manual_config) as mock_refresh:
-        # Simulate selecting the "Manual Config" tab
-        # The tab text is " ⚙️ Manual Config "
-        app.notebook.select(2)
-        app.notebook.event_generate("<<NotebookTabChanged>>")
-        
-        # Check if refresh_manual_config was called
-        mock_refresh.assert_called_once()
+class TestMainWindow:
+    """Test MainWindow class."""
+    
+    def test_window_creation(self):
+        """Test that main window can be created."""
+        root = tk.Tk()
+        try:
+            app = MainWindow(root)
+            assert app is not None
+            assert root.title() == "WinSet - Windows Configuration Toolkit"
+        finally:
+            root.destroy()
+    
+    def test_category_selection(self):
+        """Test category selection functionality."""
+        root = tk.Tk()
+        try:
+            app = MainWindow(root)
+            
+            # Test select all
+            app.select_all_categories()
+            for var in app.category_vars.values():
+                assert var.get() is True
+            
+            # Test clear all
+            app.clear_all_categories()
+            for var in app.category_vars.values():
+                assert var.get() is False
+                
+        finally:
+            root.destroy()

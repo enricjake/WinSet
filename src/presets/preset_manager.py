@@ -1,357 +1,309 @@
-import os
-import glob
-import json
-import logging
-from typing import List, Dict, Tuple, Optional
-from src.storage.importer import ProfileImporter
-from src.models.profile import Profile
-from src.models.setting import RegistrySetting
+"""
+Preset Manager for WinSet - manages preset configurations.
+"""
 
-# Configure logging
-logger = logging.getLogger(__name__)
+import json
+import os
+from pathlib import Path
+from typing import List, Dict, Optional, Any, Tuple
+from datetime import datetime
 
 
 class PresetManager:
-    """Discovers, loads, and manages default configuration presets."""
-
-    def __init__(self, presets_dir: str = None):
+    """
+    Manages preset configurations for WinSet.
+    Handles loading, validating, and applying presets.
+    """
+    
+    def __init__(self, presets_dir: Optional[str] = None):
         """
         Initialize the preset manager.
+        
         Args:
-            presets_dir: Path to the directory containing .json preset files.
-                         Defaults to the 'presets' folder in the project root.
+            presets_dir: Optional custom presets directory.
+                        Defaults to the 'presets' folder in the application directory.
         """
         if presets_dir is None:
-            # Assume presets are loaded from a folder adjacent to main executable/script
             base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
             self.presets_dir = os.path.join(base_dir, "presets")
         else:
-            self.presets_dir = presets_dir
-
-        self.importer = ProfileImporter()
-        self.available_presets: Dict[str, str] = {} # Map 'name' -> 'filepath'
-        self.custom_presets_dir = os.path.join(self.presets_dir, "custom")
-        os.makedirs(self.custom_presets_dir, exist_ok=True)
-        self.refresh_presets()
-        logger.info(f"Preset manager initialized with presets from {self.presets_dir}")
-
-    def refresh_presets(self):
-        """Scans the presets directory for available JSON files."""
-        self.available_presets.clear()
+            # Validate custom directory path
+            self.presets_dir = self._validate_preset_path(presets_dir)
         
+        self.presets: Dict[str, Dict[str, Any]] = {}
+        self._load_presets()
+    
+    def _validate_preset_path(self, path: str) -> str:
+        """
+        Validate a preset directory path for security.
+        
+        Args:
+            path: The path to validate
+            
+        Returns:
+            The validated absolute path
+            
+        Raises:
+            ValueError: If the path is unsafe
+        """
+        try:
+            safe_path = Path(path).resolve()
+            
+            # Check if path is within application directory or user's WinSet folder
+            base_dir = Path(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))).resolve()
+            user_winset = Path(os.path.expanduser("~")) / "Documents" / "WinSet" / "presets"
+            user_winset.resolve()
+            
+            if base_dir not in safe_path.parents and safe_path != base_dir:
+                if user_winset not in safe_path.parents and safe_path != user_winset:
+                    raise ValueError(
+                        f"Preset path '{path}' is outside allowed directories"
+                    )
+            
+            # Create directory if it doesn't exist
+            os.makedirs(safe_path, exist_ok=True)
+            
+            return str(safe_path)
+            
+        except Exception as e:
+            raise ValueError(f"Invalid preset path: {e}")
+    
+    def _load_presets(self):
+        """Load all preset files from the presets directory."""
         if not os.path.exists(self.presets_dir):
-            logger.warning(f"Presets directory not found: {self.presets_dir}")
+            os.makedirs(self.presets_dir, exist_ok=True)
             return
-
-        # Load built-in presets
-        json_files = glob.glob(os.path.join(self.presets_dir, "*.json"))
         
-        for file_path in json_files:
-            # Skip custom presets directory
-            if "custom" in file_path:
-                continue
-                
-            # Load the file just to extract its metadata name securely without applying it
-            try:
-                success, msg, profile = self.importer.load_profile(file_path)
-                if success and profile:
-                    # We store it by lowercase internal name for easier lookup
-                    preset_id = os.path.basename(file_path).replace('.json', '').lower()
-                    self.available_presets[preset_id] = file_path
-                    logger.debug(f"Loaded built-in preset: {preset_id}")
-            except Exception as e:
-                logger.error(f"Failed to parse preset file {file_path}: {e}")
+        for filename in os.listdir(self.presets_dir):
+            if filename.endswith('.json'):
+                preset_path = os.path.join(self.presets_dir, filename)
+                try:
+                    with open(preset_path, 'r', encoding='utf-8') as f:
+                        content = f.read(1024 * 1024)  # 1MB limit
+                        preset_data = json.loads(content)
+                    
+                    # Validate preset structure
+                    if self._validate_preset_data(preset_data):
+                        preset_id = filename[:-5]  # Remove .json
+                        self.presets[preset_id] = preset_data
+                    else:
+                        print(f"Invalid preset structure in: {filename}")
+                        
+                except json.JSONDecodeError as e:
+                    print(f"Invalid JSON in preset file {filename}: {e}")
+                except Exception as e:
+                    print(f"Error loading preset {filename}: {e}")
+    
+    def _validate_preset_data(self, data: Dict[str, Any]) -> bool:
+        """
+        Validate preset data structure.
         
-        # Load custom presets
-        custom_files = glob.glob(os.path.join(self.custom_presets_dir, "*.json"))
+        Args:
+            data: Preset data dictionary
+            
+        Returns:
+            True if valid, False otherwise
+        """
+        required_fields = ['name', 'description', 'settings']
         
-        for file_path in custom_files:
-            try:
-                success, msg, profile = self.importer.load_profile(file_path)
-                if success and profile:
-                    preset_id = os.path.basename(file_path).replace('.json', '').lower()
-                    # Mark as custom preset
-                    custom_preset_id = f"custom_{preset_id}"
-                    self.available_presets[custom_preset_id] = file_path
-                    logger.debug(f"Loaded custom preset: {custom_preset_id}")
-            except Exception as e:
-                logger.error(f"Failed to parse custom preset file {file_path}: {e}")
-
-    def get_preset_list(self) -> List[str]:
-        """Returns a list of available preset identifiers."""
-        return list(self.available_presets.keys())
-
+        for field in required_fields:
+            if field not in data:
+                return False
+        
+        if not isinstance(data['settings'], dict):
+            return False
+        
+        # Limit number of settings
+        if len(data['settings']) > 200:
+            return False
+        
+        # Validate setting names
+        for setting_id, setting_value in data['settings'].items():
+            if len(setting_id) > 100:
+                return False
+            
+            # Setting value should be basic type
+            if not isinstance(setting_value, (str, int, bool, float, dict)):
+                return False
+            
+            # If dict, limit size
+            if isinstance(setting_value, dict):
+                if len(setting_value) > 20:
+                    return False
+        
+        return True
+    
     def get_preset_info(self, preset_id: str) -> Optional[Dict[str, Any]]:
-        """Get information about a preset without loading the full profile.
+        """
+        Get information about a preset.
         
         Args:
-            preset_id: The identifier of the preset.
+            preset_id: The ID of the preset
             
         Returns:
-            Dictionary with preset info or None if not found.
+            Preset metadata or None if not found
         """
-        preset_id = preset_id.lower()
-        if preset_id not in self.available_presets:
+        if preset_id not in self.presets:
             return None
-            
-        file_path = self.available_presets[preset_id]
         
-        try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                
-            is_custom = preset_id.startswith("custom_")
-            
-            return {
-                'id': preset_id,
-                'name': data.get('name', preset_id),
-                'description': data.get('description', ''),
-                'version': data.get('version', '1.0'),
-                'is_custom': is_custom,
-                'file_path': file_path
-            }
-        except Exception as e:
-            logger.error(f"Failed to read preset info for {preset_id}: {e}")
-            return None
-
-    def load_preset(self, preset_id: str) -> Tuple[bool, str, Profile | None]:
-        """Loads a specific preset profile into memory."""
-        preset_id = preset_id.lower()
-        if preset_id not in self.available_presets:
-            return False, f"Preset '{preset_id}' not found.", None
-            
-        file_path = self.available_presets[preset_id]
-        return self.importer.load_profile(file_path)
-
-    def apply_preset(self, preset_id: str, safe_mode: bool = True) -> Tuple[bool, str, Dict[str, bool]]:
-        """Directly loads and applies a preset to the system."""
-        success, msg, profile = self.load_preset(preset_id)
-        if not success:
-            return False, msg, {}
-            
-        results = self.importer.apply_profile(profile, safe_mode=safe_mode)
-        
-        # Check if any settings applied successfully
-        if any(results.values()):
-            return True, f"Preset '{preset_id}' applied successfully.", results
-        else:
-            return False, f"Failed to apply settings from preset '{preset_id}'.", results
-
-    def create_custom_preset(
-        self, 
-        name: str, 
-        description: str = "", 
-        settings: Optional[List[RegistrySetting]] = None
-    ) -> Tuple[bool, str, Optional[str]]:
-        """Create a new custom preset from current settings.
+        data = self.presets[preset_id]
+        return {
+            "id": preset_id,
+            "name": data.get("name", "Unknown"),
+            "description": data.get("description", ""),
+            "icon": data.get("icon", "⚙️"),
+            "version": data.get("version", "1.0"),
+            "setting_count": len(data.get("settings", {})),
+            "tags": data.get("tags", [])
+        }
+    
+    def get_preset_settings(self, preset_id: str) -> Dict[str, Any]:
+        """
+        Get the settings for a preset.
         
         Args:
-            name: Name of the new preset.
-            description: Description of the preset.
-            settings: List of settings to include (if None, will use current system values).
+            preset_id: The ID of the preset
             
         Returns:
-            Tuple of (success, message, preset_id).
+            Dictionary of settings or empty dict if not found
         """
-        try:
-            # Create a sanitized preset ID
-            preset_id = name.lower().replace(" ", "_")
-            file_name = f"{preset_id}.json"
-            file_path = os.path.join(self.custom_presets_dir, file_name)
-            
-            # Check if preset already exists
-            if os.path.exists(file_path):
-                return False, f"Custom preset '{name}' already exists.", None
-            
-            # Create profile
-            profile = Profile(
-                name=name,
-                description=description,
-                windows_version="Custom Preset"
-            )
-            
-            # If settings are provided, use them
-            if settings:
-                for setting in settings:
-                    profile.add_setting(setting)
-            
-            # Export to file
-            profile_data = profile.export()
-            
-            with open(file_path, 'w', encoding='utf-8') as f:
-                json.dump(profile_data, f, indent=4)
-            
-            # Refresh presets to include the new one
-            self.refresh_presets()
-            
-            custom_preset_id = f"custom_{preset_id}"
-            logger.info(f"Created custom preset: {custom_preset_id}")
-            
-            return True, f"Custom preset '{name}' created successfully.", custom_preset_id
-            
-        except Exception as e:
-            logger.error(f"Failed to create custom preset: {e}")
-            return False, f"Error creating custom preset: {str(e)}", None
-
-    def delete_custom_preset(self, preset_id: str) -> Tuple[bool, str]:
-        """Delete a custom preset.
+        if preset_id not in self.presets:
+            return {}
+        
+        return self.presets[preset_id].get("settings", {})
+    
+    def list_presets(self) -> List[Dict[str, Any]]:
+        """
+        List all available presets.
+        
+        Returns:
+            List of preset information dictionaries
+        """
+        presets_list = []
+        for preset_id in self.presets:
+            info = self.get_preset_info(preset_id)
+            if info:
+                presets_list.append(info)
+        
+        # Sort by name
+        presets_list.sort(key=lambda x: x['name'])
+        return presets_list
+    
+    def apply_preset(self, preset_id: str, apply_function) -> Tuple[bool, Dict[str, bool]]:
+        """
+        Apply a preset using the provided apply function.
         
         Args:
-            preset_id: The identifier of the preset to delete.
+            preset_id: The ID of the preset to apply
+            apply_function: Function to call for each setting,
+                           takes (setting_id, value) and returns bool
             
         Returns:
-            Tuple of (success, message).
+            Tuple of (success, results dict)
         """
-        preset_id = preset_id.lower()
+        if preset_id not in self.presets:
+            return False, {}
         
-        if not preset_id.startswith("custom_"):
-            return False, "Cannot delete built-in presets."
+        settings = self.get_preset_settings(preset_id)
+        results = {}
+        all_success = True
         
-        if preset_id not in self.available_presets:
-            return False, f"Preset '{preset_id}' not found."
+        for setting_id, value in settings.items():
+            try:
+                success = apply_function(setting_id, value)
+                results[setting_id] = success
+                if not success:
+                    all_success = False
+            except Exception as e:
+                results[setting_id] = False
+                all_success = False
+                print(f"Error applying setting {setting_id}: {e}")
         
-        try:
-            file_path = self.available_presets[preset_id]
-            os.remove(file_path)
-            
-            # Remove from available presets
-            del self.available_presets[preset_id]
-            
-            logger.info(f"Deleted custom preset: {preset_id}")
-            return True, f"Custom preset '{preset_id}' deleted successfully."
-            
-        except Exception as e:
-            logger.error(f"Failed to delete custom preset {preset_id}: {e}")
-            return False, f"Error deleting custom preset: {str(e)}"
-
-    def update_custom_preset(
-        self, 
-        preset_id: str, 
-        name: Optional[str] = None, 
-        description: Optional[str] = None, 
-        settings: Optional[List[RegistrySetting]] = None
-    ) -> Tuple[bool, str]:
-        """Update an existing custom preset.
+        return all_success, results
+    
+    def create_preset(self, preset_id: str, name: str, description: str, 
+                      settings: Dict[str, Any], icon: str = "⚙️") -> bool:
+        """
+        Create a new preset.
         
         Args:
-            preset_id: The identifier of the preset to update.
-            name: New name for the preset (optional).
-            description: New description (optional).
-            settings: Updated list of settings (optional).
+            preset_id: Unique identifier for the preset
+            name: Display name
+            description: Preset description
+            settings: Dictionary of settings
+            icon: Emoji icon for the preset
             
         Returns:
-            Tuple of (success, message).
+            True if successful, False otherwise
         """
-        preset_id = preset_id.lower()
+        # Validate preset ID
+        if not preset_id or not re.match(r'^[a-z0-9_-]+$', preset_id, re.IGNORECASE):
+            return False
         
-        if not preset_id.startswith("custom_"):
-            return False, "Cannot update built-in presets."
+        # Validate settings
+        if len(settings) > 200:
+            return False
         
-        if preset_id not in self.available_presets:
-            return False, f"Preset '{preset_id}' not found."
+        preset_data = {
+            "name": name[:100],
+            "description": description[:500],
+            "icon": icon[:2] if icon else "⚙️",
+            "version": "1.0",
+            "created": datetime.now().isoformat(),
+            "settings": settings
+        }
+        
+        preset_path = os.path.join(self.presets_dir, f"{preset_id}.json")
         
         try:
-            file_path = self.available_presets[preset_id]
+            with open(preset_path, 'w', encoding='utf-8') as f:
+                json.dump(preset_data, f, indent=2, ensure_ascii=False)
             
-            # Load existing preset
-            success, msg, profile = self.load_preset(preset_id)
-            if not success:
-                return False, f"Failed to load existing preset: {msg}"
-            
-            # Update fields if provided
-            if name:
-                profile.name = name
-            if description is not None:
-                profile.description = description
-            if settings is not None:
-                profile.settings.clear()
-                for setting in settings:
-                    profile.add_setting(setting)
-            
-            # Save updated preset
-            profile_data = profile.export()
-            
-            with open(file_path, 'w', encoding='utf-8') as f:
-                json.dump(profile_data, f, indent=4)
-            
-            logger.info(f"Updated custom preset: {preset_id}")
-            return True, f"Custom preset '{preset_id}' updated successfully."
+            # Reload presets
+            self._load_presets()
+            return True
             
         except Exception as e:
-            logger.error(f"Failed to update custom preset {preset_id}: {e}")
-            return False, f"Error updating custom preset: {str(e)}"
-
-    def export_preset(self, preset_id: str, output_path: str) -> Tuple[bool, str]:
-        """Export a preset to a custom location.
+            print(f"Error creating preset: {e}")
+            return False
+    
+    def delete_preset(self, preset_id: str) -> bool:
+        """
+        Delete a preset.
         
         Args:
-            preset_id: The identifier of the preset to export.
-            output_path: Destination path for the exported preset.
+            preset_id: The ID of the preset to delete
             
         Returns:
-            Tuple of (success, message).
+            True if successful, False otherwise
         """
-        preset_id = preset_id.lower()
+        if preset_id not in self.presets:
+            return False
         
-        if preset_id not in self.available_presets:
-            return False, f"Preset '{preset_id}' not found."
+        preset_path = os.path.join(self.presets_dir, f"{preset_id}.json")
         
         try:
-            source_path = self.available_presets[preset_id]
-            
-            # Ensure output directory exists
-            os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
-            
-            # Copy the file
-            import shutil
-            shutil.copy2(source_path, output_path)
-            
-            logger.info(f"Exported preset {preset_id} to {output_path}")
-            return True, f"Preset '{preset_id}' exported successfully to {output_path}."
-            
+            os.remove(preset_path)
+            del self.presets[preset_id]
+            return True
         except Exception as e:
-            logger.error(f"Failed to export preset {preset_id}: {e}")
-            return False, f"Error exporting preset: {str(e)}"
-
-    def import_preset(self, file_path: str, overwrite: bool = False) -> Tuple[bool, str, Optional[str]]:
-        """Import a preset from a custom location.
+            print(f"Error deleting preset: {e}")
+            return False
+    
+    def get_preset_usage(self, preset_id: str) -> Optional[int]:
+        """
+        Get usage count for a preset (from history).
         
         Args:
-            file_path: Path to the preset file to import.
-            overwrite: If True, overwrite existing preset with same name.
+            preset_id: The ID of the preset
             
         Returns:
-            Tuple of (success, message, preset_id).
+            Number of times applied or None if not found
         """
-        try:
-            if not os.path.exists(file_path):
-                return False, f"File not found: {file_path}", None
-            
-            # Load the preset to get its name
-            with open(file_path, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-            
-            preset_name = data.get('name', 'imported_preset')
-            preset_id = preset_name.lower().replace(" ", "_")
-            dest_file_name = f"{preset_id}.json"
-            dest_path = os.path.join(self.custom_presets_dir, dest_file_name)
-            
-            # Check if preset already exists
-            if os.path.exists(dest_path) and not overwrite:
-                return False, f"Preset '{preset_name}' already exists. Use overwrite=True to replace.", None
-            
-            # Copy the file
-            import shutil
-            shutil.copy2(file_path, dest_path)
-            
-            # Refresh presets
-            self.refresh_presets()
-            
-            custom_preset_id = f"custom_{preset_id}"
-            logger.info(f"Imported preset: {custom_preset_id}")
-            
-            return True, f"Preset '{preset_name}' imported successfully.", custom_preset_id
-            
-        except Exception as e:
-            logger.error(f"Failed to import preset from {file_path}: {e}")
-            return False, f"Error importing preset: {str(e)}", None
+        # This would integrate with HistoryManager
+        # Placeholder for now
+        return 0
+
+
+# Add missing import at the top of the file
+import re

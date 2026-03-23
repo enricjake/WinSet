@@ -1,70 +1,136 @@
+"""
+Tests for preset loading and validation.
+"""
+
 import pytest
+import sys
 import os
+import json
 import tempfile
-from unittest.mock import patch, MagicMock
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+
 from src.presets.preset_manager import PresetManager
 
-@pytest.fixture
-def mock_presets_dir(tmp_path):
-    """Create a temporary directory with a couple mock JSON presets"""
-    dev_json = """{
-        "name": "Developer Mode",
-        "created": "2023-11-01T10:00:00",
-        "modified": "2023-11-01T10:00:00",
-        "version": "1.0",
-        "windows_version": "Win",
-        "description": "desc",
-        "checksum": "fake",
-        "settings": {}
-    }"""
-    
-    # Needs a real checksum for the manager to load it properly
-    # A trick is to use the ProfileExporter to generate a valid empty json
-    from src.storage.exporter import ProfileExporter
-    from src.models.profile import Profile
-    import json
-    
-    p = Profile(name="Mock Preset")
-    data = p.export()
-    
-    with open(tmp_path / "mock1.json", "w") as f:
-        json.dump(data, f)
-        
-    p2 = Profile(name="Mock Preset 2")
-    data2 = p2.export()
-    
-    with open(tmp_path / "mock2.json", "w") as f:
-        json.dump(data2, f)
-        
-    return str(tmp_path)
 
-
-def test_preset_discovery(mock_presets_dir):
-    """Test that the manager correctly finds .json files in the dir"""
-    manager = PresetManager(presets_dir=mock_presets_dir)
-    presets = manager.get_preset_list()
+class TestPresetLoading:
+    """Test preset loading functionality."""
     
-    assert len(presets) == 2
-    assert "mock1" in presets
-    assert "mock2" in presets
-
-@patch('src.storage.importer.ProfileImporter.apply_profile')
-def test_preset_application(mock_apply, mock_presets_dir):
-    """Test applying a preset translates to an importer apply call"""
-    manager = PresetManager(presets_dir=mock_presets_dir)
-    mock_apply.return_value = {"mock_setting": True} # Assume one setting applied successfully
+    def test_load_valid_preset(self):
+        """Test loading a valid preset file."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Create a valid preset file
+            preset_data = {
+                "name": "Valid Preset",
+                "description": "This is a valid preset",
+                "icon": "✅",
+                "settings": {
+                    "setting1": 1,
+                    "setting2": "value"
+                }
+            }
+            
+            preset_path = os.path.join(temp_dir, "valid.json")
+            with open(preset_path, 'w') as f:
+                json.dump(preset_data, f)
+            
+            manager = PresetManager(presets_dir=temp_dir)
+            info = manager.get_preset_info("valid")
+            
+            assert info is not None
+            assert info["name"] == "Valid Preset"
+            assert info["setting_count"] == 2
     
-    success, msg, results = manager.apply_preset("mock1")
+    def test_load_invalid_preset_skipped(self):
+        """Test that invalid preset files are skipped."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Create invalid preset files
+            invalid_files = [
+                ("missing_name.json", {"description": "No name", "settings": {}}),
+                ("missing_settings.json", {"name": "No Settings"}),
+                ("wrong_type.json", {"name": "Wrong", "settings": "not a dict"}),
+                ("empty.json", {}),
+            ]
+            
+            for filename, data in invalid_files:
+                filepath = os.path.join(temp_dir, filename)
+                with open(filepath, 'w') as f:
+                    json.dump(data, f)
+            
+            # Also create a valid one to ensure loading works
+            valid_data = {
+                "name": "Valid",
+                "description": "Valid",
+                "settings": {"a": 1}
+            }
+            with open(os.path.join(temp_dir, "valid.json"), 'w') as f:
+                json.dump(valid_data, f)
+            
+            manager = PresetManager(presets_dir=temp_dir)
+            
+            # Only valid preset should be loaded
+            assert manager.get_preset_info("valid") is not None
+            for filename, _ in invalid_files:
+                preset_id = filename[:-5]
+                assert manager.get_preset_info(preset_id) is None
     
-    assert success is True
-    assert results["mock_setting"] is True
-    mock_apply.assert_called_once()
+    def test_load_malformed_json_skipped(self):
+        """Test that malformed JSON files are skipped."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Create a malformed JSON file
+            filepath = os.path.join(temp_dir, "malformed.json")
+            with open(filepath, 'w') as f:
+                f.write('{"name": "test", "description": "malformed", "settings": {')
+            
+            manager = PresetManager(presets_dir=temp_dir)
+            
+            # Should not load
+            assert manager.get_preset_info("malformed") is None
     
-def test_preset_application_not_found():
-    """Test trying to apply a preset that doesn't exist"""
-    manager = PresetManager()
+    def test_preset_with_too_many_settings_rejected(self):
+        """Test that presets with too many settings are rejected."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Create a preset with 300 settings (exceeds limit of 200)
+            many_settings = {f"setting_{i}": i for i in range(300)}
+            preset_data = {
+                "name": "Too Many",
+                "description": "Has too many settings",
+                "settings": many_settings
+            }
+            
+            filepath = os.path.join(temp_dir, "toomany.json")
+            with open(filepath, 'w') as f:
+                json.dump(preset_data, f)
+            
+            manager = PresetManager(presets_dir=temp_dir)
+            
+            # Should be rejected due to validation
+            assert manager.get_preset_info("toomany") is None
     
-    success, msg, results = manager.apply_preset("non_existent_preset_999")
-    
-    assert success is False
-    assert "not found" in msg.lower()
+    def test_preset_injection_attempt_blocked(self):
+        """Test that injection attempts in preset data are blocked."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Create preset with malicious setting ID
+            malicious_data = {
+                "name": "Malicious",
+                "description": "Attempts injection",
+                "settings": {
+                    "'; DROP TABLE settings; --": "malicious",
+                    "../../../Windows/System32/config/SAM": "malicious"
+                }
+            }
+            
+            filepath = os.path.join(temp_dir, "malicious.json")
+            with open(filepath, 'w') as f:
+                json.dump(malicious_data, f)
+            
+            manager = PresetManager(presets_dir=temp_dir)
+            
+            # Should either be rejected or sanitized
+            info = manager.get_preset_info("malicious")
+            if info is not None:
+                settings = manager.get_preset_settings("malicious")
+                # Setting IDs should be safe
+                for setting_id in settings.keys():
+                    assert ";" not in setting_id
+                    assert "../" not in setting_id
