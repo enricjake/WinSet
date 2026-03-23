@@ -235,64 +235,64 @@ class MainWindow:
 
         # Status bar removed
 
-    def _create_home_tab(self):
-        """Create home tab content with scrolling support"""
-        container = ttk.Frame(self.home_frame)
-        container.pack(fill=tk.BOTH, expand=True)
+        def _create_home_tab(self):
+            """Create home tab content with scrolling support"""
+            container = ttk.Frame(self.home_frame)
+            container.pack(fill=tk.BOTH, expand=True)
 
-        # Scrollable content area
-        scroll_frame = ttk.Frame(container)
-        scroll_frame.pack(fill=tk.BOTH, expand=True)
+            # Scrollable content area
+            scroll_frame = ttk.Frame(container)
+            scroll_frame.pack(fill=tk.BOTH, expand=True)
 
-        self.home_canvas = tk.Canvas(scroll_frame, highlightthickness=0, bg=self.bg_color)
-        home_scroll = ttk.Scrollbar(scroll_frame, orient="vertical", command=self.home_canvas.yview)
-        self.home_scrollable = ttk.Frame(self.home_canvas)
+            self.home_canvas = tk.Canvas(scroll_frame, highlightthickness=0, bg=self.bg_color)
+            home_scroll = ttk.Scrollbar(scroll_frame, orient="vertical", command=self.home_canvas.yview)
+            self.home_scrollable = ttk.Frame(self.home_canvas)
 
-        self.home_scrollable.bind("<Configure>", lambda e: self.home_canvas.configure(scrollregion=self.home_canvas.bbox("all")))
-        self.home_window_id = self.home_canvas.create_window((0, 0), window=self.home_scrollable, anchor="nw")
-        self.home_canvas.configure(yscrollcommand=home_scroll.set)
+            self.home_scrollable.bind("<Configure>", lambda e: self.home_canvas.configure(scrollregion=self.home_canvas.bbox("all")))
+            self.home_window_id = self.home_canvas.create_window((0, 0), window=self.home_scrollable, anchor="nw")
+            self.home_canvas.configure(yscrollcommand=home_scroll.set)
 
-        self.home_canvas.bind(
-            "<Configure>",
-            lambda e: self.home_canvas.itemconfigure(self.home_window_id, width=e.width),
-        )
-        
-        self.home_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        home_scroll.pack(side=tk.RIGHT, fill=tk.Y)
-        
-        # Bind scroll events FIRST
-        self._bind_home_scroll_events()
-        
-        # Content
-        welcome_frame = ttk.LabelFrame(self.home_scrollable, text="Welcome", padding=20)
-        welcome_frame.pack(fill=tk.X, padx=25, pady=(10, 15))
-        
-        welcome_label = ttk.Label(welcome_frame, text="WinSet", style="Header.TLabel")
-        welcome_label.pack(anchor="w", pady=(0, 10))
-        
-        desc_label = ttk.Label(welcome_frame, 
-                             text="Windows Configuration Toolkit\nEasily backup, restore, and optimize your Windows experience.", 
-                             font=("Segoe UI", 12))
-        desc_label.pack(anchor="w", pady=(0, 15))
-        
-        actions_frame = ttk.LabelFrame(self.home_scrollable, text="Quick Actions", padding=20)
-        actions_frame.pack(fill=tk.X, padx=25, pady=(0, 15))
-        
-        ttk.Button(actions_frame, text="📤 Export Settings", command=self.export_settings, width=20).pack(fill=tk.X, pady=(0, 10))
-        ttk.Button(actions_frame, text="📥 Import Settings", command=self.import_settings, width=20).pack(fill=tk.X, pady=(0, 10))
-        ttk.Button(actions_frame, text="🔄 Create Restore Point", command=self.create_restore_point, width=20).pack(fill=tk.X, pady=(0, 10))
-        
-        tools_frame = ttk.LabelFrame(self.home_scrollable, text="System Tools", padding=20)
-        tools_frame.pack(fill=tk.X, padx=25, pady=(0, 25))
-        
-        ttk.Button(tools_frame, text="⚙️ Control Panel", command=lambda: self.open_system_tool("control"), width=20).pack(fill=tk.X, pady=(0, 10))
-        ttk.Button(tools_frame, text="🔧 Services", command=lambda: self.open_system_tool("services.msc"), width=20).pack(fill=tk.X, pady=(0, 10))
-        ttk.Button(tools_frame, text="🖥️ MSConfig", command=lambda: self.open_system_tool("msconfig.exe")).pack(fill=tk.X, pady=(0, 10))
-        ttk.Button(tools_frame, text="📁 Task Manager", command=lambda: self.open_system_tool("taskmgr"), width=20).pack(fill=tk.X, pady=(0, 10))
-        ttk.Button(tools_frame, text="🔍 Programs & Features", command=lambda: self.open_system_tool("appwiz.cpl"), width=20).pack(fill=tk.X, pady=(0, 10))
-        ttk.Button(tools_frame, text="🌐 Network Settings", command=lambda: self.open_system_tool("ncpa.cpl"), width=20).pack(fill=tk.X, pady=(0, 10))
+            self.home_canvas.bind(
+                "<Configure>",
+                lambda e: self.home_canvas.itemconfigure(self.home_window_id, width=e.width),
+            )
+            
+            self.home_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+            home_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+            
+            # Bind scroll events FIRST
+            self._bind_home_scroll_events()
+            
+            # Content
+            welcome_frame = ttk.LabelFrame(self.home_scrollable, text="Welcome", padding=20)
+            welcome_frame.pack(fill=tk.X, padx=25, pady=(10, 15))
+            
+            welcome_label = ttk.Label(welcome_frame, text="WinSet", style="Header.TLabel")
+            welcome_label.pack(anchor="w", pady=(0, 10))
+            
+            desc_label = ttk.Label(welcome_frame, 
+                                text="Windows Configuration Toolkit\nEasily backup, restore, and optimize your Windows experience.", 
+                                font=("Segoe UI", 12))
+            desc_label.pack(anchor="w", pady=(0, 15))
+            
+            actions_frame = ttk.LabelFrame(self.home_scrollable, text="Quick Actions", padding=20)
+            actions_frame.pack(fill=tk.X, padx=25, pady=(0, 15))
+            
+            ttk.Button(actions_frame, text="📤 Export Settings", command=self.export_settings, width=20).pack(fill=tk.X, pady=(0, 10))
+            ttk.Button(actions_frame, text="📥 Import Settings", command=self.import_settings, width=20).pack(fill=tk.X, pady=(0, 10))
+            ttk.Button(actions_frame, text="🔄 Create Restore Point", command=self.create_restore_point, width=20).pack(fill=tk.X, pady=(0, 10))
+            
+            tools_frame = ttk.LabelFrame(self.home_scrollable, text="System Tools", padding=20)
+            tools_frame.pack(fill=tk.X, padx=25, pady=(0, 25))
+            
+            ttk.Button(tools_frame, text="⚙️ Control Panel", command=lambda: self.open_system_tool("control"), width=20).pack(fill=tk.X, pady=(0, 10))
+            ttk.Button(tools_frame, text="🔧 Services", command=lambda: self.open_system_tool("services.msc"), width=20).pack(fill=tk.X, pady=(0, 10))
+            ttk.Button(tools_frame, text="🖥️ MSConfig", command=lambda: self.open_system_tool("msconfig.exe")).pack(fill=tk.X, pady=(0, 10))
+            ttk.Button(tools_frame, text="📁 Task Manager", command=lambda: self.open_system_tool("taskmgr"), width=20).pack(fill=tk.X, pady=(0, 10))
+            ttk.Button(tools_frame, text="🔍 Programs & Features", command=lambda: self.open_system_tool("appwiz.cpl"), width=20).pack(fill=tk.X, pady=(0, 10))
+            ttk.Button(tools_frame, text="🌐 Network Settings", command=lambda: self.open_system_tool("ncpa.cpl"), width=20).pack(fill=tk.X, pady=(0, 10))
 
-    # src/gui/main_window.py
+        # src/gui/main_window.py
 
     def _create_presets_tab(self):
         """Create presets tab content"""
@@ -318,6 +318,39 @@ class MainWindow:
             {"id": "performance", "title": "\u26a1 Peak Performance", "desc": "Unlock full system performance"},
             {"id": "battery", "title": "\U0001f50b Battery Saver", "desc": "Optimize for extended battery life"}
         ]
+        
+        # Dynamically load additional presets
+        existing_ids = {p["id"] for p in presets}
+        # Fix: Use get_preset_info() instead of get_preset_list()
+        try:
+            preset_info = self.preset_manager.get_preset_info()
+            for preset_id, info in preset_info.items():
+                if preset_id not in existing_ids:
+                    presets.append({
+                        "id": preset_id,
+                        "title": info.get("name", preset_id),
+                        "desc": info.get("description", "")
+                    })
+        except AttributeError:
+            # Fallback for older versions or if method doesn't exist
+            pass
+        
+        # Create preset buttons
+        for i, preset in enumerate(presets):
+            row = i // 3
+            col = i % 3
+            frame = ttk.Frame(presets_frame, relief=tk.RAISED, borderwidth=1)
+            frame.grid(row=row, column=col, padx=10, pady=10, sticky="nsew")
+            
+            ttk.Label(frame, text=preset["title"], font=("Segoe UI", 12, "bold")).pack(anchor="w", padx=10, pady=(10, 5))
+            ttk.Label(frame, text=preset["desc"], wraplength=200).pack(anchor="w", padx=10, pady=(0, 10))
+            
+            ttk.Button(frame, text="Apply Preset", 
+                    command=lambda p=preset["id"]: self.apply_preset(p)).pack(pady=(0, 10))
+        
+        # Configure grid weights
+        for i in range(3):
+            presets_frame.columnconfigure(i, weight=1)
         
         # Dynamically load additional presets
         existing_ids = {p["id"] for p in presets}

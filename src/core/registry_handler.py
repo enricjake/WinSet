@@ -323,7 +323,13 @@ class RegistryHandler:
         
         for i, op in enumerate(operations):
             try:
-                hive, key_path, value_name, value_type, value = op
+                if len(op) == 5:
+                    hive, key_path, value_name, value_type, value = op
+                else:
+                    # Handle different tuple lengths if needed
+                    results.append((i, False, "Invalid operation format"))
+                    continue
+                    
                 success = self.write_value(hive, key_path, value_name, value_type, value)
                 results.append((i, success, None if success else "Write failed"))
             except Exception as e:
