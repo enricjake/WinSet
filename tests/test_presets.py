@@ -45,16 +45,20 @@ class TestPresetLoading:
     def test_load_invalid_preset_skipped(self):
         """Test that invalid preset files are skipped."""
         with tempfile.TemporaryDirectory() as temp_dir:
-            # Create invalid preset files
+            # Case 1: Truly invalid files (missing essential fields or wrong types)
             invalid_files = [
                 ("missing_name.preset.json", {"app": "WinSet", "description": "No name", "settings": {}}),
                 ("missing_settings.preset.json", {"app": "WinSet", "name": "No Settings"}),
                 ("wrong_type.preset.json", {"app": "WinSet", "name": "Wrong", "settings": "not a dict"}),
-                ("missing_app.preset.json", {"name": "No App", "description": "Missing signature", "settings": {}}),
                 ("empty.preset.json", {}),
             ]
             
-            for filename, data in invalid_files:
+            # Case 2: Presets without app signature (now allowed if otherwise valid)
+            unsigned_files = [
+                ("missing_app.preset.json", {"name": "No App", "description": "Missing signature", "settings": {}}),
+            ]
+            
+            for filename, data in invalid_files + unsigned_files:
                 filepath = os.path.join(temp_dir, filename)
                 with open(filepath, 'w') as f:
                     json.dump(data, f)
@@ -71,11 +75,17 @@ class TestPresetLoading:
             
             manager = PresetManager(presets_dir=temp_dir)
             
-            # Only valid preset should be loaded
+            # Valid preset should be loaded
             assert manager.get_preset_info("valid") is not None
+            
+            # Unsigned but otherwise valid preset should be loaded (new behavior)
+            assert manager.get_preset_info("missing_app") is not None
+            
+            # Truly invalid presets should still be skipped
             for filename, _ in invalid_files:
                 preset_id = filename[:-12]
                 assert manager.get_preset_info(preset_id) is None
+
     
     def test_load_malformed_json_skipped(self):
         """Test that malformed JSON files are skipped."""
