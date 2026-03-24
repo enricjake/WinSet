@@ -12,6 +12,10 @@ import tkinter as tk
 
 # Safe check for Tkinter availability
 def _check_tk():
+    # Always skip in GitHub Actions/Headless CI by default
+    if os.getenv('GITHUB_ACTIONS') == 'true':
+        return False
+        
     try:
         # Try to initialize a real toolkit instance
         root = tk.Tk()
