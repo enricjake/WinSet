@@ -380,16 +380,17 @@ class MainWindow:
         help_frame = ttk.LabelFrame(container, text="How Custom Presets Work", padding=12)
         help_frame.pack(fill=tk.X, pady=(0, 15))
         help_text = (
+            "WinSet scans for custom presets (*.preset.json) in your home folder and Documents/WinSet/presets.\n\n"
             "Create Custom Preset opens a 2-step wizard:\n"
             "1) Select the settings you want to include.\n"
             "2) Choose values for those settings (pre-filled with your current system values).\n\n"
-            "When you click Apply Settings, WinSet creates a restore point, then applies only the selected settings "
-            "as an overlay (other settings stay unchanged).\n\n"
-            "For reuse, choose Save to File to export your custom preset as JSON. To apply it later:\n"
-            "- save it in the project's presets folder and reopen WinSet to see it as a preset card, or\n"
-            "- use Import Settings to load the JSON directly."
+            "Applying a preset creates a restore point then overlays ONLY the selected settings.\n\n"
+            "To manualy add a preset: Save it as a JSON file ending in .preset.json in:\n"
+            f"- {os.path.expanduser('~')}\\WinSet\\presets (Portable usage)\n"
+            "- Your home directory root (Quick access)"
         )
         ttk.Label(help_frame, text=help_text, style="Description.TLabel", justify=tk.LEFT, wraplength=980).pack(anchor="w")
+
         
         # Presets grid
         presets_frame = ttk.Frame(container)

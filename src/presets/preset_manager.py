@@ -48,6 +48,16 @@ class PresetManager:
             user_dir = os.path.join(app_data_path, "WinSet", "presets")
             os.makedirs(user_dir, exist_ok=True)
             self.presets_dirs.append(user_dir)
+
+            # 3. User Home Directory (Documents/WinSet/presets)
+            # This is a more obvious place for manual user presets
+            home_winset = os.path.join(os.path.expanduser("~"), "Documents", "WinSet", "presets")
+            if os.path.exists(home_winset):
+                self.presets_dirs.append(home_winset)
+            
+            # 4. User Home Directory root (per user request)
+            # Scan for *.preset.json files directly in the home folder
+            self.presets_dirs.append(os.path.expanduser("~"))
             
             # Store the preferred writable directory for new presets
             self.writable_presets_dir = user_dir
@@ -106,6 +116,10 @@ class PresetManager:
                 # New Requirement: Must end in .preset.json
                 if filename.endswith('.preset.json'):
                     preset_path = os.path.join(directory, filename)
+                    # Skip if it's a directory
+                    if not os.path.isfile(preset_path):
+                        continue
+
                     try:
                         with open(preset_path, 'r', encoding='utf-8') as f:
                             preset_data = json.load(f)
@@ -116,10 +130,11 @@ class PresetManager:
                             # User presets override built-in ones if IDs conflict
                             self.presets[preset_id] = preset_data
                         else:
-                            print(f"Skipping invalid/unsigned preset: {filename}")
+                            print(f"DEBUG: Skipping invalid preset: {filename} (Validation failed)")
                             
                     except Exception as e:
-                        print(f"Error loading preset {filename} from {directory}: {e}")
+                        print(f"DEBUG: Error loading preset {filename} from {directory}: {e}")
+
     
     def _validate_preset_data(self, data: Dict[str, Any]) -> bool:
         """
@@ -133,9 +148,14 @@ class PresetManager:
         """
         required_fields = ['name', 'description', 'settings']
         
-        # New Requirement: Internal signature check
+        # New Requirement: Internal signature check (Relaxed for user presets)
         if data.get('app') != 'WinSet':
-            return False
+            # check if it has essential fields instead of failing immediately
+            if not all(field in data for field in ['name', 'settings']):
+                return False
+            # If it's a valid structure but missing 'app' tag, we'll allow it
+            print(f"DEBUG: Loading preset '{data.get('name')}' without explicit app signature.")
+
 
         for field in required_fields:
             if field not in data:
