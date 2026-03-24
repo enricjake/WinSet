@@ -56,13 +56,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Auto-tag version
-        id: tag_version
-        uses: anothrNick/github-tag-action@1.71.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          WITH_V: true
-          DEFAULT_BUMP: patch
+      - name: Extract Version from Code
+        id: get_version
+        shell: pwsh
+        run: |
+          $version = python -c "from src.version import VERSION; print(VERSION)"
+          echo "VERSION=v$version" >> $env:GITHUB_OUTPUT
+          echo "Extracted Version: v$version"
 
       - name: Build Standalone EXE
         run: |
@@ -71,10 +71,11 @@ jobs:
       - name: Create Draft Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.tag_version.outputs.new_tag }}
-          name: Release ${{ steps.tag_version.outputs.new_tag }}
+          tag_name: ${{ steps.get_version.outputs.VERSION }}
+          name: Release ${{ steps.get_version.outputs.VERSION }}
           draft: true
           prerelease: false
           files: dist/WinSet.exe
+          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
