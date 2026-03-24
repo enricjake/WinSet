@@ -155,7 +155,9 @@ class TestPresetLoading:
                 json.dump(preset_data, f)
             
             manager = PresetManager(presets_dir=temp_dir)
-            assert manager.preset_sources["source"] == temp_dir
+            from pathlib import Path
+            assert Path(manager.preset_sources["source"]).resolve() == Path(temp_dir).resolve()
+
 
     def test_is_builtin(self):
         """Test the is_builtin helper."""
