@@ -375,101 +375,126 @@ class MainWindow:
         action_frame = ttk.Frame(container)
         action_frame.pack(fill=tk.X, pady=(0, 15))
         ttk.Button(action_frame, text="\u2795 Create Custom Preset", command=self.create_custom_preset, style="Accent.TButton").pack(side=tk.LEFT)
-
         # Custom preset explanation
         help_frame = ttk.LabelFrame(container, text="How Custom Presets Work", padding=12)
-        help_frame.pack(fill=tk.X, pady=(0, 15))
-        help_text = (
-            "WinSet scans for custom presets (*.preset.json) in your home folder and Documents/WinSet/presets.\n\n"
-            "Create Custom Preset opens a 2-step wizard:\n"
-            "1) Select the settings you want to include.\n"
-            "2) Choose values for those settings (pre-filled with your current system values).\n\n"
-            "Applying a preset creates a restore point then overlays ONLY the selected settings.\n\n"
-            "To manualy add a preset: Save it as a JSON file ending in .preset.json in:\n"
-            f"- {os.path.expanduser('~')}\\WinSet\\presets (Portable usage)\n"
-            "- Your home directory root (Quick access)"
+        help_frame.pack(fill=tk.X, pady=(0, 20))
+        
+        # Check if user presets directory exists to provide better onboarding
+        folder_exists = self.preset_manager.user_presets_dir_exists()
+        user_doc_path = f"{os.path.expanduser('~')}\\Documents\\WinSet\\presets"
+        
+        redrafted_help = (
+            "Custom presets allow you to save a specific collection of settings and apply them anytime as an overlay.\n\n"
+            "• HOW IT WORKS: Presets only modify the settings saved inside them. Other settings remain untouched.\n"
+            "• CREATE: Click 'Create Custom Preset' to select settings and set their values using your current system as a template.\n"
+            "• SAVE & APPLY: Once created, you can apply settings immediately or save them to a file for later use.\n"
+            "• ALTERNATIVES: Use 'Import Settings' in the Manual tab to load any WinSet JSON configuration directly.\n\n"
+            "To see your saved presets here, ensure they end in '.preset.json' and are stored in:\n"
+            f"➜ {user_doc_path}"
         )
-        ttk.Label(help_frame, text=help_text, style="Description.TLabel", justify=tk.LEFT, wraplength=980).pack(anchor="w")
+        
+        ttk.Label(help_frame, text=redrafted_help, style="Description.TLabel", justify=tk.LEFT, wraplength=950).pack(anchor="w")
+        
+        if not folder_exists:
+            prompt_frame = ttk.Frame(help_frame, padding=(0, 10, 0, 0))
+            prompt_frame.pack(fill=tk.X)
+            
+            error_icon = "\u26a0\ufe0f" # Warning icon
+            ttk.Label(prompt_frame, text=f"{error_icon} Presets folder not found.", foreground="#ff9800", font=("Segoe UI", 10, "bold")).pack(side=tk.LEFT)
+            
+            def create_folder():
+                if self.preset_manager.ensure_user_presets_dir():
+                    messagebox.showinfo("Success", "Presets folder created successfully!")
+                    self._create_presets_tab() # Refresh tab
+                else:
+                    messagebox.showerror("Error", "Failed to create directory.")
 
+            ttk.Button(prompt_frame, text="Create Folder Now", command=create_folder, style="Accent.TButton", width=20).pack(side=tk.LEFT, padx=15)
+
+        # Standard Presets Section
+        ttk.Label(container, text="Standard Presets", style="Bold.TLabel", font=("Segoe UI", 14, "bold")).pack(anchor="w", pady=(10, 10))
         
-        # Presets grid
-        presets_frame = ttk.Frame(container)
-        presets_frame.pack(fill=tk.BOTH, expand=True)
+        standard_frame = ttk.Frame(container)
+        standard_frame.pack(fill=tk.X, pady=(0, 20))
         
-        # Default presets
-        presets = [
-            {"id": "gaming", "title": "\U0001f3ae Gaming Mode", "desc": "Optimize system for gaming performance"},
-            {"id": "developer", "title": "\U0001f4bb Developer Mode", "desc": "Configure for development workflows"},
-            {"id": "privacy", "title": "\U0001f512 Privacy Max", "desc": "Maximum privacy and security settings"},
-            {"id": "performance", "title": "\u26a1 Peak Performance", "desc": "Unlock full system performance"},
-            {"id": "battery", "title": "\U0001f50b Battery Saver", "desc": "Optimize for extended battery life"}
-        ]
+        # Custom Presets Section (Hidden if empty)
+        custom_header = ttk.Frame(container)
+        # Custom presets will be added here if found
         
-        # Dynamically load additional presets
-        existing_ids = {p["id"] for p in presets}
-        # Use get_preset_list() to get all preset IDs
-        try:
-            preset_list = self.preset_manager.get_preset_list()
-            for preset_id in preset_list:
-                if preset_id not in existing_ids:
-                    info = self.preset_manager.get_preset_info(preset_id)
-                    if info:
-                        presets.append({
-                            "id": preset_id,
-                            "title": info.get("name", preset_id),
-                            "desc": info.get("description", "")
-                        })
-        except AttributeError:
-            # Fallback for older versions or if method doesn't exist
-            pass
+        custom_frame = ttk.Frame(container)
+        custom_frame.pack(fill=tk.X)
+
+        # Categorize presets
+        standard_presets = []
+        custom_presets = []
         
-        # Create preset buttons
-        for i, preset in enumerate(presets):
-            row = i // 3
-            col = i % 3
-            # Modern card container
-            card_outer = tk.Frame(presets_frame, bg="#1e2130", padx=1, pady=1)
-            card_outer.grid(row=row, column=col, padx=10, pady=10, sticky="nsew")
+        # Get all available presets from manager
+        all_preset_ids = self.preset_manager.get_preset_list()
+        
+        # Define the built-in IDs we want in the standard section
+        built_in_order = ["gaming", "developer", "privacy", "performance", "battery"]
+        
+        for pid in all_preset_ids:
+            info = self.preset_manager.get_preset_info(pid)
+            if not info: continue
             
-            card = tk.Frame(card_outer, bg="#181b2a")
-            card.pack(fill=tk.BOTH, expand=True)
+            preset_card_data = {
+                "id": pid,
+                "title": info.get("name", pid),
+                "desc": info.get("description", "")
+            }
             
-            # Left accent border
-            accent_bar = tk.Frame(card, bg=self.accent_color, width=3)
-            accent_bar.pack(side=tk.LEFT, fill=tk.Y)
+            if self.preset_manager.is_builtin(pid) or pid in built_in_order:
+                standard_presets.append(preset_card_data)
+            else:
+                custom_presets.append(preset_card_data)
+                
+        # Sort standard presets by defined order
+        standard_presets.sort(key=lambda x: built_in_order.index(x["id"]) if x["id"] in built_in_order else 99)
+
+        def render_presets(presets_list, parent_frame):
+            for i, preset in enumerate(presets_list):
+                row = i // 3
+                col = i % 3
+                
+                # Card container
+                card_outer = tk.Frame(parent_frame, bg="#1e2130", padx=1, pady=1)
+                card_outer.grid(row=row, column=col, padx=10, pady=10, sticky="nsew")
+                
+                card = tk.Frame(card_outer, bg="#181b2a")
+                card.pack(fill=tk.BOTH, expand=True)
+                
+                accent_bar = tk.Frame(card, bg=self.accent_color, width=4)
+                accent_bar.pack(side=tk.LEFT, fill=tk.Y)
+                
+                content = tk.Frame(card, bg="#181b2a", padx=15, pady=15)
+                content.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+                
+                ttk.Label(content, text=preset["title"], font=("Segoe UI", 12, "bold"), background="#181b2a").pack(anchor="w", pady=(0, 5))
+                ttk.Label(content, text=preset["desc"], wraplength=180, background="#181b2a", foreground="#a0a4b8").pack(anchor="w", pady=(0, 15))
+                
+                btn_frame = tk.Frame(content, bg="#181b2a")
+                btn_frame.pack(fill=tk.X)
+                ttk.Button(btn_frame, text="Apply Preset", 
+                        command=lambda p=preset["id"]: self.apply_preset(p)).pack(side=tk.LEFT)
             
-            content = tk.Frame(card, bg="#181b2a", padx=15, pady=15)
-            content.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-            
-            ttk.Label(content, text=preset["title"], font=("Segoe UI", 12, "bold"), background="#181b2a").pack(anchor="w", pady=(0, 5))
-            ttk.Label(content, text=preset["desc"], wraplength=180, background="#181b2a", foreground="#a0a4b8").pack(anchor="w", pady=(0, 15))
-            
-            btn_frame = tk.Frame(content, bg="#181b2a")
-            btn_frame.pack(fill=tk.X)
-            ttk.Button(btn_frame, text="Apply Preset", 
-                    command=lambda p=preset["id"]: self.apply_preset(p)).pack(side=tk.LEFT)
+            for i in range(3):
+                parent_frame.columnconfigure(i, weight=1)
+
+        # Render Standard
+        render_presets(standard_presets, standard_frame)
         
-        # Configure grid weights
-        for i in range(3):
-            presets_frame.columnconfigure(i, weight=1)
-        
-        # Dynamically load additional presets
-        existing_ids = {p["id"] for p in presets}
-        # Use get_preset_list() to get all preset IDs
-        try:
-            preset_list = self.preset_manager.get_preset_list()
-            for preset_id in preset_list:
-                if preset_id not in existing_ids:
-                    info = self.preset_manager.get_preset_info(preset_id)
-                    if info:
-                        presets.append({
-                            "id": preset_id,
-                            "title": info.get("name", preset_id),
-                            "desc": info.get("description", "")
-                        })
-        except AttributeError:
-            # Fallback for older versions or if method doesn't exist
-            pass
+        # Render Custom if any
+        if custom_presets:
+            # Cosmetic Separator
+            separator = ttk.Frame(container, height=2, style="Card.TFrame")
+            separator.pack(fill=tk.X, pady=20)
+            
+            ttk.Label(container, text="Custom Presets", style="Bold.TLabel", font=("Segoe UI", 14, "bold")).pack(anchor="w", pady=(0, 10))
+            
+            custom_grid = ttk.Frame(container)
+            custom_grid.pack(fill=tk.X)
+            render_presets(custom_presets, custom_grid)
 
     def _create_manual_tab(self):
         """Create manual configuration tab"""
@@ -1800,9 +1825,11 @@ class MainWindow:
         dialog = tk.Toplevel(self.root)
         dialog.title("Create Preset - Step 1: Select Settings")
         dialog.geometry("700x700")
+        dialog.configure(bg=self.bg_color)
         dialog.transient(self.root)
         dialog.grab_set()
         self.center_dialog(dialog)
+
 
         # Header
         header = ttk.Frame(dialog, padding=20)
@@ -1850,7 +1877,10 @@ class MainWindow:
                 row.pack(fill=tk.X, padx=10, pady=2)
                 var = tk.BooleanVar(value=False)
                 vars_map[s.id] = (var, s)
-                ttk.Checkbutton(row, text=s.name, variable=var).pack(anchor="w")
+                # Ensure Checkbutton matches the dark theme
+                cb = ttk.Checkbutton(row, text=s.name, variable=var)
+                cb.pack(anchor="w")
+
 
         # Footer
         footer = ttk.Frame(dialog, padding=20)
@@ -1872,9 +1902,11 @@ class MainWindow:
         dialog = tk.Toplevel(self.root)
         dialog.title("Create Preset - Step 2: Configure Values")
         dialog.geometry("800x700")
+        dialog.configure(bg=self.bg_color)
         dialog.transient(self.root)
         dialog.grab_set()
         self.center_dialog(dialog)
+
 
         # Header
         header = ttk.Frame(dialog, padding=20)
@@ -1919,9 +1951,10 @@ class MainWindow:
             
             # Create Row
             row_frame = ttk.LabelFrame(scrollable, text=setting.name, padding=10)
-            row_frame.pack(fill=tk.X, pady=5)
+            row_frame.pack(fill=tk.X, pady=8)
             
             options = self._parse_setting_options(setting, current_val)
+
             setting.is_preset_editor = True # Helper flag for text button label
 
             # Define update callback

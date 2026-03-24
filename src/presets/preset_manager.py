@@ -26,6 +26,7 @@ class PresetManager:
                         If provided, only this directory will be scanned.
         """
         self.presets: Dict[str, Dict[str, Any]] = {}
+        self.preset_sources: Dict[str, str] = {} # preset_id -> directory
         
         if presets_dir:
             # If a specific directory is provided (e.g., for testing), only use that.
@@ -36,9 +37,9 @@ class PresetManager:
             
             # 1. Built-in presets (shipped with the app)
             base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-            builtin_dir = os.path.join(base_dir, "presets")
-            if os.path.exists(builtin_dir):
-                self.presets_dirs.append(builtin_dir)
+            self.builtin_dir = os.path.join(base_dir, "presets")
+            if os.path.exists(self.builtin_dir):
+                self.presets_dirs.append(self.builtin_dir)
                 
             # 2. User-writable presets (persistent in APPDATA)
             app_data_path = os.getenv("LOCALAPPDATA")
@@ -51,45 +52,72 @@ class PresetManager:
 
             # 3. User Home Directory (Documents/WinSet/presets)
             # This is a more obvious place for manual user presets
-            home_winset = os.path.join(os.path.expanduser("~"), "Documents", "WinSet", "presets")
-            if os.path.exists(home_winset):
-                self.presets_dirs.append(home_winset)
+            self.home_presets_dir = os.path.join(os.path.expanduser("~"), "Documents", "WinSet", "presets")
+            if os.path.exists(self.home_presets_dir):
+                self.presets_dirs.append(self.home_presets_dir)
             
             # 4. User Home Directory root (per user request)
             # Scan for *.preset.json files directly in the home folder
-            self.presets_dirs.append(os.path.expanduser("~"))
+            self.home_dir = os.path.expanduser("~")
+            self.presets_dirs.append(self.home_dir)
             
             # Store the preferred writable directory for new presets
             self.writable_presets_dir = user_dir
             
         self._load_presets()
     
+    def is_builtin(self, preset_id: str) -> bool:
+        """Check if a preset is a built-in one."""
+        source = self.preset_sources.get(preset_id)
+        if not source: return False
+        return source == getattr(self, 'builtin_dir', '')
+        
+    def ensure_user_presets_dir(self) -> bool:
+        """Ensure the Documents/WinSet/presets directory exists. Returns True if it already existed."""
+        path = os.path.join(os.path.expanduser("~"), "Documents", "WinSet", "presets")
+        if os.path.exists(path):
+            return True
+        try:
+            os.makedirs(path, exist_ok=True)
+            return False
+        except Exception:
+            return False
+
+    def user_presets_dir_exists(self) -> bool:
+        """Check if the Documents/WinSet/presets directory exists."""
+        path = os.path.join(os.path.expanduser("~"), "Documents", "WinSet", "presets")
+        return os.path.exists(path)
+
+    
     def _validate_preset_path(self, path: str) -> str:
         """
         Validate a preset directory path for security.
-        
-        Args:
-            path: The path to validate
-            
-        Returns:
-            The validated absolute path
-            
-        Raises:
-            ValueError: If the path is unsafe
         """
         try:
+            # We allow standard Windows/Linux path separators in the directory path
             safe_path = Path(path).resolve()
             
-            # Check if path is within application directory or user's WinSet folder
-            base_dir = Path(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))).resolve()
-            user_winset = Path(os.path.expanduser("~")) / "Documents" / "WinSet" / "presets"
-            user_winset = user_winset.resolve()
+            # Check for other dangerous strings that aren't path separators
+            dangerous_strings = [';', '--', '..', '"', "'", '*', 'DROP', 'DELETE', 'INSERT', 'UPDATE']
+            path_str = str(safe_path).lower()
+            for s in dangerous_strings:
+                if s in path_str:
+                    raise ValueError(f"Dangerous string detected in path: {s}")
             
             # Allow temporary directories for testing
             temp_dir = Path(tempfile.gettempdir()).resolve()
             is_temp_path = temp_dir in safe_path.parents or safe_path == temp_dir
             
-            if not is_temp_path:
+            # Allow home directory
+            home_dir = Path(os.path.expanduser("~")).resolve()
+            is_home_path = home_dir in safe_path.parents or safe_path == home_dir
+
+            if not is_temp_path and not is_home_path:
+                # Resolve other allowed paths
+                base_dir = Path(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))).resolve()
+                user_winset = Path(os.path.expanduser("~")) / "Documents" / "WinSet" / "presets"
+                user_winset = user_winset.resolve()
+                
                 if base_dir not in safe_path.parents and safe_path != base_dir:
                     if user_winset not in safe_path.parents and safe_path != user_winset:
                         raise ValueError(
@@ -102,7 +130,9 @@ class PresetManager:
             return str(safe_path)
             
         except Exception as e:
+            if isinstance(e, ValueError): raise e
             raise ValueError(f"Invalid preset path: {e}")
+
     
     def _load_presets(self):
         """Load all valid preset files from all configured directories."""
@@ -129,8 +159,10 @@ class PresetManager:
                             preset_id = filename[:-12]  # Remove .preset.json
                             # User presets override built-in ones if IDs conflict
                             self.presets[preset_id] = preset_data
+                            self.preset_sources[preset_id] = directory
                         else:
                             print(f"DEBUG: Skipping invalid preset: {filename} (Validation failed)")
+
                             
                     except Exception as e:
                         print(f"DEBUG: Error loading preset {filename} from {directory}: {e}")
@@ -191,24 +223,11 @@ class PresetManager:
     def _is_safe_setting_id(self, setting_id: str) -> bool:
         """
         Check if a setting ID is safe (no injection characters).
-        
-        Args:
-            setting_id: The setting ID to check
-            
-        Returns:
-            True if safe, False otherwise
         """
-        # Block dangerous characters
-        dangerous_chars = [';', '--', '..', '/', '\\', '"', "'", '*', 'DROP', 'DELETE', 'INSERT', 'UPDATE']
-        
-        setting_lower = setting_id.lower()
-        for char in dangerous_chars:
-            if char in setting_lower:
-                return False
-        
-        # Only allow alphanumeric, underscores, and hyphens
+        # Strictly alphanumeric and basic separators for setting IDs
         import re
         return bool(re.match(r'^[a-zA-Z0-9_-]+$', setting_id))
+
     
     def get_preset_info(self, preset_id: str) -> Optional[Dict[str, Any]]:
         """
