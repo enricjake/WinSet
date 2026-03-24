@@ -62,8 +62,15 @@ class HistoryManager:
                 success INTEGER DEFAULT 1,
                 reverted INTEGER DEFAULT 0
             )
-        """
+            """
         )
+        
+        # Ensure 'success' column exists (for databases created before this column was added)
+        try:
+            cursor.execute("SELECT success FROM changes LIMIT 1")
+        except sqlite3.OperationalError:
+            cursor.execute("ALTER TABLE changes ADD COLUMN success INTEGER DEFAULT 1")
+        
         self._conn.commit()
 
     def _create_indexes(self):

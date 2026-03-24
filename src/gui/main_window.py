@@ -66,12 +66,10 @@ class MainWindow:
         
         self.history_manager = HistoryManager()
         
-        # UI State
-        self.is_busy: bool = False
-        self.expanded_settings: Dict[str, Any] = {}  # Track which settings are expanded
-        self.expanded_setting_id: Optional[str] = None
-        self.manual_row_widgets: Dict[str, Any] = {}
-        self.restart_pending: bool = False
+        # Initialize category variables for category selection
+        self.category_vars: Dict[str, tk.BooleanVar] = {}
+        for category in self.setting_loader.get_categories():
+            self.category_vars[category.name] = tk.BooleanVar(value=True)
         
         self._setup_ui()
         self.center_window()
@@ -84,6 +82,16 @@ class MainWindow:
         x = (self.root.winfo_screenwidth() // 2) - (width // 2)
         y = (self.root.winfo_screenheight() // 2) - (height // 2)
         self.root.geometry(f'{width}x{height}+{x}+{y}')
+    
+    def select_all_categories(self):
+        """Select all category checkboxes."""
+        for var in self.category_vars.values():
+            var.set(True)
+    
+    def clear_all_categories(self):
+        """Clear all category checkboxes."""
+        for var in self.category_vars.values():
+            var.set(False)
 
     def _setup_ui(self):
         """Create main UI layout with professional styling"""
@@ -235,62 +243,62 @@ class MainWindow:
 
         # Status bar removed
 
-        def _create_home_tab(self):
-            """Create home tab content with scrolling support"""
-            container = ttk.Frame(self.home_frame)
-            container.pack(fill=tk.BOTH, expand=True)
+    def _create_home_tab(self):
+        """Create home tab content with scrolling support"""
+        container = ttk.Frame(self.home_frame)
+        container.pack(fill=tk.BOTH, expand=True)
 
-            # Scrollable content area
-            scroll_frame = ttk.Frame(container)
-            scroll_frame.pack(fill=tk.BOTH, expand=True)
+        # Scrollable content area
+        scroll_frame = ttk.Frame(container)
+        scroll_frame.pack(fill=tk.BOTH, expand=True)
 
-            self.home_canvas = tk.Canvas(scroll_frame, highlightthickness=0, bg=self.bg_color)
-            home_scroll = ttk.Scrollbar(scroll_frame, orient="vertical", command=self.home_canvas.yview)
-            self.home_scrollable = ttk.Frame(self.home_canvas)
+        self.home_canvas = tk.Canvas(scroll_frame, highlightthickness=0, bg=self.bg_color)
+        home_scroll = ttk.Scrollbar(scroll_frame, orient="vertical", command=self.home_canvas.yview)
+        self.home_scrollable = ttk.Frame(self.home_canvas)
 
-            self.home_scrollable.bind("<Configure>", lambda e: self.home_canvas.configure(scrollregion=self.home_canvas.bbox("all")))
-            self.home_window_id = self.home_canvas.create_window((0, 0), window=self.home_scrollable, anchor="nw")
-            self.home_canvas.configure(yscrollcommand=home_scroll.set)
+        self.home_scrollable.bind("<Configure>", lambda e: self.home_canvas.configure(scrollregion=self.home_canvas.bbox("all")))
+        self.home_window_id = self.home_canvas.create_window((0, 0), window=self.home_scrollable, anchor="nw")
+        self.home_canvas.configure(yscrollcommand=home_scroll.set)
 
-            self.home_canvas.bind(
-                "<Configure>",
-                lambda e: self.home_canvas.itemconfigure(self.home_window_id, width=e.width),
-            )
-            
-            self.home_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-            home_scroll.pack(side=tk.RIGHT, fill=tk.Y)
-            
-            # Bind scroll events FIRST
-            self._bind_home_scroll_events()
-            
-            # Content
-            welcome_frame = ttk.LabelFrame(self.home_scrollable, text="Welcome", padding=20)
-            welcome_frame.pack(fill=tk.X, padx=25, pady=(10, 15))
-            
-            welcome_label = ttk.Label(welcome_frame, text="WinSet", style="Header.TLabel")
-            welcome_label.pack(anchor="w", pady=(0, 10))
-            
-            desc_label = ttk.Label(welcome_frame, 
-                                text="Windows Configuration Toolkit\nEasily backup, restore, and optimize your Windows experience.", 
-                                font=("Segoe UI", 12))
-            desc_label.pack(anchor="w", pady=(0, 15))
-            
-            actions_frame = ttk.LabelFrame(self.home_scrollable, text="Quick Actions", padding=20)
-            actions_frame.pack(fill=tk.X, padx=25, pady=(0, 15))
-            
-            ttk.Button(actions_frame, text="📤 Export Settings", command=self.export_settings, width=20).pack(fill=tk.X, pady=(0, 10))
-            ttk.Button(actions_frame, text="📥 Import Settings", command=self.import_settings, width=20).pack(fill=tk.X, pady=(0, 10))
-            ttk.Button(actions_frame, text="🔄 Create Restore Point", command=self.create_restore_point, width=20).pack(fill=tk.X, pady=(0, 10))
-            
-            tools_frame = ttk.LabelFrame(self.home_scrollable, text="System Tools", padding=20)
-            tools_frame.pack(fill=tk.X, padx=25, pady=(0, 25))
-            
-            ttk.Button(tools_frame, text="⚙️ Control Panel", command=lambda: self.open_system_tool("control"), width=20).pack(fill=tk.X, pady=(0, 10))
-            ttk.Button(tools_frame, text="🔧 Services", command=lambda: self.open_system_tool("services.msc"), width=20).pack(fill=tk.X, pady=(0, 10))
-            ttk.Button(tools_frame, text="🖥️ MSConfig", command=lambda: self.open_system_tool("msconfig.exe")).pack(fill=tk.X, pady=(0, 10))
-            ttk.Button(tools_frame, text="📁 Task Manager", command=lambda: self.open_system_tool("taskmgr"), width=20).pack(fill=tk.X, pady=(0, 10))
-            ttk.Button(tools_frame, text="🔍 Programs & Features", command=lambda: self.open_system_tool("appwiz.cpl"), width=20).pack(fill=tk.X, pady=(0, 10))
-            ttk.Button(tools_frame, text="🌐 Network Settings", command=lambda: self.open_system_tool("ncpa.cpl"), width=20).pack(fill=tk.X, pady=(0, 10))
+        self.home_canvas.bind(
+            "<Configure>",
+            lambda e: self.home_canvas.itemconfigure(self.home_window_id, width=e.width),
+        )
+        
+        self.home_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        home_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        # Bind scroll events FIRST
+        self._bind_home_scroll_events()
+        
+        # Content
+        welcome_frame = ttk.LabelFrame(self.home_scrollable, text="Welcome", padding=20)
+        welcome_frame.pack(fill=tk.X, padx=25, pady=(10, 15))
+        
+        welcome_label = ttk.Label(welcome_frame, text="WinSet", style="Header.TLabel")
+        welcome_label.pack(anchor="w", pady=(0, 10))
+        
+        desc_label = ttk.Label(welcome_frame, 
+                            text="Windows Configuration Toolkit\nEasily backup, restore, and optimize your Windows experience.", 
+                            font=("Segoe UI", 12))
+        desc_label.pack(anchor="w", pady=(0, 15))
+        
+        actions_frame = ttk.LabelFrame(self.home_scrollable, text="Quick Actions", padding=20)
+        actions_frame.pack(fill=tk.X, padx=25, pady=(0, 15))
+        
+        ttk.Button(actions_frame, text="📤 Export Settings", command=self.export_settings, width=20).pack(fill=tk.X, pady=(0, 10))
+        ttk.Button(actions_frame, text="📥 Import Settings", command=self.import_settings, width=20).pack(fill=tk.X, pady=(0, 10))
+        ttk.Button(actions_frame, text="🔄 Create Restore Point", command=self.create_restore_point, width=20).pack(fill=tk.X, pady=(0, 10))
+        
+        tools_frame = ttk.LabelFrame(self.home_scrollable, text="System Tools", padding=20)
+        tools_frame.pack(fill=tk.X, padx=25, pady=(0, 25))
+        
+        ttk.Button(tools_frame, text="⚙️ Control Panel", command=lambda: self.open_system_tool("control"), width=20).pack(fill=tk.X, pady=(0, 10))
+        ttk.Button(tools_frame, text="🔧 Services", command=lambda: self.open_system_tool("services.msc"), width=20).pack(fill=tk.X, pady=(0, 10))
+        ttk.Button(tools_frame, text="🖥️ MSConfig", command=lambda: self.open_system_tool("msconfig.exe")).pack(fill=tk.X, pady=(0, 10))
+        ttk.Button(tools_frame, text="📁 Task Manager", command=lambda: self.open_system_tool("taskmgr"), width=20).pack(fill=tk.X, pady=(0, 10))
+        ttk.Button(tools_frame, text="🔍 Programs & Features", command=lambda: self.open_system_tool("appwiz.cpl"), width=20).pack(fill=tk.X, pady=(0, 10))
+        ttk.Button(tools_frame, text="🌐 Network Settings", command=lambda: self.open_system_tool("ncpa.cpl"), width=20).pack(fill=tk.X, pady=(0, 10))
 
         # src/gui/main_window.py
 
