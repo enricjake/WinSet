@@ -12,13 +12,18 @@ import ctypes
 import logging
 from logging.handlers import RotatingFileHandler
 
+# Ensure app data directory exists before file logger setup.
+_app_data_root = os.getenv('LOCALAPPDATA', os.path.expanduser('~'))
+_log_dir = os.path.join(_app_data_root, 'WinSet')
+os.makedirs(_log_dir, exist_ok=True)
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         RotatingFileHandler(
-            filename=os.path.join(os.getenv('LOCALAPPDATA', '~'), 'WinSet', 'winset.log'),
+            filename=os.path.join(_log_dir, 'winset.log'),
             maxBytes=1024*1024,  # 1MB
             backupCount=3
         ),

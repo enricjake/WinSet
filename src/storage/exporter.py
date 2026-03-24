@@ -1,6 +1,7 @@
 import json
 import os
 import platform
+import base64
 from typing import List
 
 from src.models.profile import Profile
@@ -17,6 +18,15 @@ class ProfileExporter:
     def _get_windows_version(self) -> str:
         """Retrieves the Windows OS version."""
         return f"{platform.system()} {platform.release()} ({platform.version()})"
+
+    def _serialize_registry_value(self, setting: RegistrySetting, value):
+        """Convert non-JSON-safe registry values into lossless JSON form."""
+        if setting.value_type == "REG_BINARY" and isinstance(value, (bytes, bytearray)):
+            return {
+                "__encoding__": "base64",
+                "data": base64.b64encode(bytes(value)).decode("ascii"),
+            }
+        return value
 
     def export_profile(self, settings_to_export: List[RegistrySetting], output_path: str, profile_name: str = "Exported Profile", description: str = "") -> bool:
         """Reads current system values for provided settings and saves them to a file."""
@@ -39,10 +49,7 @@ class ProfileExporter:
                 
                 # If the registry value exists, update the setting and add it
                 if current_value is not None:
-                    # Convert bytes to string if needed for JSON serialization
-                    if isinstance(current_value, bytes):
-                        current_value = current_value.decode('utf-8', errors='replace')
-                    setting.value = current_value
+                    setting.value = self._serialize_registry_value(setting, current_value)
                     profile.add_setting(setting)
 
             # Ensure the output directory exists before saving

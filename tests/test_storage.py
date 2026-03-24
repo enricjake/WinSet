@@ -1,6 +1,7 @@
 import pytest
 import os
 import json
+import base64
 from unittest.mock import patch, MagicMock
 from src.storage.exporter import ProfileExporter
 from src.storage.importer import ProfileImporter
@@ -92,3 +93,56 @@ def test_profile_import_and_apply(mock_write_value, tmp_path, sample_setting):
     
     assert results["test_setting"] is True
     mock_write_value.assert_called_once()
+
+
+def test_verify_checksum_does_not_mutate_input():
+    """Checksum validation should not mutate caller-owned dictionaries."""
+    importer = ProfileImporter()
+    data = {
+        "name": "Test Profile",
+        "created": "2023-11-01T10:00:00",
+        "modified": "2023-11-01T10:00:00",
+        "version": "1.0",
+        "windows_version": "Win11",
+        "description": "desc",
+        "tags": [],
+        "settings": {},
+        "checksum": "fake_hash",
+    }
+    original = dict(data)
+
+    importer._verify_checksum(data)
+    assert data == original
+
+
+@patch('src.core.registry_handler.RegistryHandler.read_value')
+def test_profile_export_binary_value_is_base64_encoded(mock_read_value, tmp_path, sample_setting):
+    """REG_BINARY export should use a lossless base64 representation."""
+    exporter = ProfileExporter()
+    sample_setting.value_type = "REG_BINARY"
+    raw = b"\x00\x01\xffbinary\x10"
+    mock_read_value.return_value = raw
+
+    file_path = tmp_path / "binary_export.json"
+    success = exporter.export_profile([sample_setting], str(file_path), "Binary Profile")
+
+    assert success is True
+    with open(file_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    exported_value = data["settings"]["test_setting"]["value"]
+    assert exported_value["__encoding__"] == "base64"
+    assert base64.b64decode(exported_value["data"]) == raw
+
+
+def test_profile_import_decodes_base64_binary():
+    """Importer should decode base64 encoded REG_BINARY values."""
+    importer = ProfileImporter()
+    raw = b"\xaa\xbb\xcc\xdd"
+    encoded = {
+        "__encoding__": "base64",
+        "data": base64.b64encode(raw).decode("ascii"),
+    }
+
+    decoded = importer._deserialize_registry_value(encoded, "REG_BINARY")
+    assert decoded == raw

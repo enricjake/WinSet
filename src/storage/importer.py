@@ -1,6 +1,7 @@
 import json
 import os
 import hashlib
+import base64
 from typing import Dict, Any, Tuple
 
 from src.models.profile import Profile
@@ -23,18 +24,29 @@ class ProfileImporter:
 
     def _verify_checksum(self, data: dict) -> bool:
         """Verifies the integrity of the profile data using the checksum."""
-        if "checksum" not in data:
+        stored_checksum = data.get("checksum")
+        if not stored_checksum:
             return False
-            
-        stored_checksum = data.pop("checksum")
-        # Recreate the json data as string identical to how it was exported
-        data_str = json.dumps(data, sort_keys=True)
+
+        # Build a sanitized copy to avoid mutating caller-owned dictionaries.
+        data_without_checksum = {k: v for k, v in data.items() if k != "checksum"}
+        data_str = json.dumps(data_without_checksum, sort_keys=True)
         calculated_checksum = hashlib.sha256(data_str.encode()).hexdigest()
-        
-        # Put checksum back in case data dict is reused
-        data["checksum"] = stored_checksum
-        
         return stored_checksum == calculated_checksum
+
+    def _deserialize_registry_value(self, setting_value: Any, value_type: str) -> Any:
+        """Restore encoded profile values back to native registry-compatible types."""
+        if (
+            value_type == "REG_BINARY"
+            and isinstance(setting_value, dict)
+            and setting_value.get("__encoding__") == "base64"
+            and isinstance(setting_value.get("data"), str)
+        ):
+            try:
+                return base64.b64decode(setting_value["data"])
+            except (ValueError, TypeError):
+                return setting_value
+        return setting_value
 
     def load_profile(self, file_path: str) -> Tuple[bool, str, Profile | None]:
         """Loads and validates a profile from disk."""
@@ -68,7 +80,7 @@ class ProfileImporter:
                             description=sdata["description"],
                             category=SettingCategory(sdata["category"]),
                             setting_type=SettingType(stype),
-                            value=sdata["value"],
+                            value=self._deserialize_registry_value(sdata["value"], sdata["value_type"]),
                             default_value=sdata.get("default_value"),
                             requires_admin=sdata.get("requires_admin", False),
                             requires_restart=sdata.get("requires_restart", False),
@@ -86,6 +98,8 @@ class ProfileImporter:
                     
                     if master:
                         value = sdata.get("value") if isinstance(sdata, dict) else sdata
+                        if isinstance(master, RegistrySetting):
+                            value = self._deserialize_registry_value(value, master.value_type)
                         if isinstance(master, RegistrySetting):
                             setting = RegistrySetting(
                                 id=master.id,

@@ -53,6 +53,9 @@ class MainWindow:
         self.home_canvas: Optional[tk.Canvas] = None
         self.home_scrollable: Optional[ttk.Frame] = None
         self.home_window_id: Optional[int] = None
+        self.presets_canvas: Optional[tk.Canvas] = None
+        self.presets_scrollable: Optional[ttk.Frame] = None
+        self.presets_window_id: Optional[int] = None
         self.root.geometry("1100x750")
         self.root.minsize(1000, 700)
         
@@ -205,6 +208,24 @@ class MainWindow:
                        borderwidth=1,
                        relief="solid",
                        font=("Segoe UI", 9))
+
+        # Modern scrollbar styling used across tabs.
+        style.configure(
+            "Modern.Vertical.TScrollbar",
+            background="#d6d9de",
+            troughcolor="#f1f3f5",
+            bordercolor="#f1f3f5",
+            arrowcolor="#6b7280",
+            darkcolor="#d6d9de",
+            lightcolor="#d6d9de",
+            gripcount=0,
+            width=12,
+        )
+        style.map(
+            "Modern.Vertical.TScrollbar",
+            background=[("active", "#b8bec7"), ("pressed", "#9aa3af")],
+            arrowcolor=[("active", "#374151"), ("pressed", "#1f2937")],
+        )
         
         style.configure("TScale", 
                        background=bg_color,
@@ -254,7 +275,12 @@ class MainWindow:
         scroll_frame.pack(fill=tk.BOTH, expand=True)
 
         self.home_canvas = tk.Canvas(scroll_frame, highlightthickness=0, bg=self.bg_color)
-        home_scroll = ttk.Scrollbar(scroll_frame, orient="vertical", command=self.home_canvas.yview)
+        home_scroll = ttk.Scrollbar(
+            scroll_frame,
+            orient="vertical",
+            command=self.home_canvas.yview,
+            style="Modern.Vertical.TScrollbar",
+        )
         self.home_scrollable = ttk.Frame(self.home_canvas)
 
         self.home_scrollable.bind("<Configure>", lambda e: self.home_canvas.configure(scrollregion=self.home_canvas.bbox("all")))
@@ -304,8 +330,36 @@ class MainWindow:
         # src/gui/main_window.py
 
     def _create_presets_tab(self):
-        """Create presets tab content"""
-        container = ttk.Frame(self.presets_frame)
+        """Create presets tab content with scrolling support"""
+        tab_container = ttk.Frame(self.presets_frame)
+        tab_container.pack(fill=tk.BOTH, expand=True)
+
+        scroll_frame = ttk.Frame(tab_container)
+        scroll_frame.pack(fill=tk.BOTH, expand=True)
+
+        self.presets_canvas = tk.Canvas(scroll_frame, highlightthickness=0, bg=self.bg_color)
+        presets_scroll = ttk.Scrollbar(
+            scroll_frame,
+            orient="vertical",
+            command=self.presets_canvas.yview,
+            style="Modern.Vertical.TScrollbar",
+        )
+        self.presets_scrollable = ttk.Frame(self.presets_canvas)
+        self.presets_scrollable.bind(
+            "<Configure>",
+            lambda e: self.presets_canvas.configure(scrollregion=self.presets_canvas.bbox("all"))
+        )
+        self.presets_window_id = self.presets_canvas.create_window((0, 0), window=self.presets_scrollable, anchor="nw")
+        self.presets_canvas.configure(yscrollcommand=presets_scroll.set)
+        self.presets_canvas.bind(
+            "<Configure>",
+            lambda e: self.presets_canvas.itemconfigure(self.presets_window_id, width=e.width),
+        )
+
+        self.presets_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        presets_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+
+        container = ttk.Frame(self.presets_scrollable)
         container.pack(fill=tk.BOTH, expand=True, padx=25, pady=25)
         
         ttk.Label(container, text="Configuration Presets", style="Header.TLabel").pack(anchor="w", pady=(0, 20))
@@ -314,6 +368,21 @@ class MainWindow:
         action_frame = ttk.Frame(container)
         action_frame.pack(fill=tk.X, pady=(0, 15))
         ttk.Button(action_frame, text="\u2795 Create Custom Preset", command=self.create_custom_preset, style="Accent.TButton").pack(side=tk.LEFT)
+
+        # Custom preset explanation
+        help_frame = ttk.LabelFrame(container, text="How Custom Presets Work", padding=12)
+        help_frame.pack(fill=tk.X, pady=(0, 15))
+        help_text = (
+            "Create Custom Preset opens a 2-step wizard:\n"
+            "1) Select the settings you want to include.\n"
+            "2) Choose values for those settings (pre-filled with your current system values).\n\n"
+            "When you click Apply Settings, WinSet creates a restore point, then applies only the selected settings "
+            "as an overlay (other settings stay unchanged).\n\n"
+            "For reuse, choose Save to File to export your custom preset as JSON. To apply it later:\n"
+            "- save it in the project's presets folder and reopen WinSet to see it as a preset card, or\n"
+            "- use Import Settings to load the JSON directly."
+        )
+        ttk.Label(help_frame, text=help_text, style="Description.TLabel", justify=tk.LEFT, wraplength=980).pack(anchor="w")
         
         # Presets grid
         presets_frame = ttk.Frame(container)
@@ -405,7 +474,12 @@ class MainWindow:
         scroll_frame.pack(fill=tk.BOTH, expand=True)
 
         self.manual_canvas = tk.Canvas(scroll_frame, highlightthickness=0, bg=self.bg_color)
-        manual_scroll = ttk.Scrollbar(scroll_frame, orient="vertical", command=self.manual_canvas.yview)
+        manual_scroll = ttk.Scrollbar(
+            scroll_frame,
+            orient="vertical",
+            command=self.manual_canvas.yview,
+            style="Modern.Vertical.TScrollbar",
+        )
         # Use tk.Frame instead of ttk.Frame for proper background color
         self.manual_scrollable = tk.Frame(self.manual_canvas, bg=self.bg_color)
 
@@ -448,7 +522,12 @@ class MainWindow:
         self.history_tree.column("Old Value", width=200, anchor='w')
         self.history_tree.column("New Value", width=200, anchor='w')
 
-        scrollbar = ttk.Scrollbar(tree_frame, orient="vertical", command=self.history_tree.yview)
+        scrollbar = ttk.Scrollbar(
+            tree_frame,
+            orient="vertical",
+            command=self.history_tree.yview,
+            style="Modern.Vertical.TScrollbar",
+        )
         self.history_tree.configure(yscrollcommand=scrollbar.set)
 
         self.history_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
@@ -513,6 +592,15 @@ class MainWindow:
         # Also bind to the main window for global scroll handling
         self.root.bind("<MouseWheel>", self._on_global_mouse_wheel)
 
+    def _bind_presets_scroll_events(self):
+        """Bind scroll events to presets tab canvas."""
+        if self.presets_canvas and self.presets_canvas.winfo_exists():
+            self.presets_canvas.bind("<MouseWheel>", self._on_presets_mouse_wheel)
+        if self.presets_frame and self.presets_frame.winfo_exists():
+            self.presets_frame.bind("<MouseWheel>", self._on_presets_mouse_wheel)
+        if self.presets_scrollable and self.presets_scrollable.winfo_exists():
+            self.presets_scrollable.bind("<MouseWheel>", self._on_presets_mouse_wheel)
+
     def _bind_scroll_events(self):
         """Bind scroll events to work properly"""
         self.manual_canvas.bind("<MouseWheel>", self._on_mouse_wheel)
@@ -521,6 +609,7 @@ class MainWindow:
         
         # Home tab scroll events - use dedicated method
         self._bind_home_scroll_events()
+        self._bind_presets_scroll_events()
         
         self.notebook.bind("<MouseWheel>", self._on_global_mouse_wheel)
         self.main_frame.bind("<MouseWheel>", self._on_global_mouse_wheel)
@@ -538,6 +627,8 @@ class MainWindow:
         # For home tab, just rebind the main containers
         if self.home_scrollable:
             self.home_scrollable.bind("<MouseWheel>", self._on_home_mouse_wheel)
+        if self.presets_scrollable:
+            self.presets_scrollable.bind("<MouseWheel>", self._on_presets_mouse_wheel)
 
     def _on_global_mouse_wheel(self, event):
         """Handle global mouse wheel events"""
@@ -546,6 +637,11 @@ class MainWindow:
             self._on_mouse_wheel(event)
         elif "Home" in selected_tab:
             self._on_home_mouse_wheel(event)
+        elif "Presets" in selected_tab:
+            self._on_presets_mouse_wheel(event)
+        elif "History" in selected_tab:
+            if self.history_tree and self.history_tree.winfo_exists():
+                self.history_tree.yview_scroll(int(-1 * (event.delta / 120)), "units")
 
     def _on_tab_changed(self, event):
         """Handle tab change events."""
@@ -556,6 +652,8 @@ class MainWindow:
         elif "Home" in selected_tab:
             # Rebind home tab scroll events when switching to home tab
             self.root.after(100, self._bind_home_scroll_events)
+        elif "Presets" in selected_tab:
+            self.root.after(100, self._bind_presets_scroll_events)
         elif "History" in selected_tab:
             self._refresh_history_tab()
 
@@ -573,6 +671,11 @@ class MainWindow:
         if self.home_canvas and self.home_canvas.winfo_exists():
             # Fixed scroll direction - positive delta should scroll down
             self.home_canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+
+    def _on_presets_mouse_wheel(self, event):
+        """Handles mouse wheel scrolling for the presets tab canvas."""
+        if self.presets_canvas and self.presets_canvas.winfo_exists():
+            self.presets_canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
 
     def refresh_manual_config(self):
         """Refresh the list of manual settings"""
@@ -1089,333 +1192,137 @@ class MainWindow:
         # If no friendly label found, return the raw value
         return str(current_val)
 
+    def _resolve_system_settings_target(self, setting) -> str:
+        """
+        Resolve the best launch target for a setting.
+
+        Returns:
+            str: "uri:ms-settings:..." or "cmd:<command line>"
+        """
+        setting_name = (getattr(setting, "name", "") or "").strip()
+        key_path = (getattr(setting, "key_path", "") or "").lower()
+        value_name = (getattr(setting, "value_name", "") or "").lower()
+        name_lower = setting_name.lower()
+
+        # Exact overrides for settings that should always open specific pages/dialogs.
+        exact_map: Dict[str, str] = {
+            "Desktop Wallpaper": "uri:ms-settings:personalization-background",
+            "Wallpaper Style (Stretch/Fill/Fit)": "uri:ms-settings:personalization-background",
+            "Tile Wallpaper": "uri:ms-settings:personalization-background",
+            "App Theme (Light/Dark)": "uri:ms-settings:personalization-colors",
+            "System Theme (Light/Dark)": "uri:ms-settings:personalization-colors",
+            "Accent Color": "uri:ms-settings:personalization-colors",
+            "Accent Color (Auto-Selected)": "uri:ms-settings:personalization-colors",
+            "Show Accent on Start/Taskbar": "uri:ms-settings:personalization-colors",
+            "Taskbar Alignment": "uri:ms-settings:taskbar",
+            "Taskbar Search Box": "uri:ms-settings:taskbar",
+            "Start Menu - Show Suggestions": "uri:ms-settings:personalization-start",
+            "Find My Device": "uri:ms-settings:findmydevice",
+            "Game Mode": "uri:ms-settings:gaming-gamemode",
+            "Game Bar - Enable": "uri:ms-settings:gaming-gamebar",
+            "Captures - Record in Background": "uri:ms-settings:gaming-captures",
+            "TruePlay (Anti-Cheat)": "uri:ms-settings:gaming-trueplay",
+            "Time Zone": "uri:ms-settings:dateandtime",
+        }
+        if setting_name in exact_map:
+            return exact_map[setting_name]
+
+        # Path-driven routing for deterministic and maintainable mapping.
+        if "\\control panel\\powercfg" in key_path:
+            return "uri:ms-settings:powersleep"
+        if "\\control\\power\\user\\powerschemes" in key_path:
+            return "cmd:rundll32.exe shell32.dll,Control_RunDLL powercfg.cpl,,3"
+        if "\\explorer\\bitbucket" in key_path:
+            return "cmd:explorer.exe shell:RecycleBinFolder"
+        if "\\explorer\\advanced" in key_path or "\\explorer\\streams" in key_path:
+            return "cmd:rundll32.exe shell32.dll,Options_RunDLL 0"
+        if "\\control panel\\mouse" in key_path or "\\control panel\\cursors" in key_path:
+            return "cmd:control mouse"
+        if "\\control panel\\keyboard" in key_path:
+            return "cmd:control keyboard"
+        if "\\precisiontouchpad" in key_path:
+            return "uri:ms-settings:devices-touchpad"
+        if "\\control panel\\international" in key_path:
+            return "cmd:intl.cpl"
+        if "\\timezoneinformation" in key_path:
+            return "uri:ms-settings:dateandtime"
+        if "\\narrator\\noroam" in key_path:
+            return "uri:ms-settings:accessibility-narrator"
+        if "\\screenmagnifier" in key_path:
+            return "uri:ms-settings:accessibility-magnifier"
+        if "\\accessibility\\highcontrast" in key_path:
+            return "uri:ms-settings:accessibility-contrastthemes"
+        if "\\accessibility\\stickykeys" in key_path or "\\accessibility\\keyboard response" in key_path or "\\accessibility\\togglekeys" in key_path:
+            return "uri:ms-settings:accessibility-keyboard"
+        if "\\accessibility\\mousekeys" in key_path:
+            return "uri:ms-settings:accessibility-mouse"
+        if "\\accessibility\\caption" in key_path or "\\accessibility\\configuration" in key_path:
+            return "uri:ms-settings:accessibility-captions"
+        if "\\capabilityaccessmanager\\consentstore\\webcam" in key_path:
+            return "uri:ms-settings:privacy-webcam"
+        if "\\capabilityaccessmanager\\consentstore\\microphone" in key_path:
+            return "uri:ms-settings:privacy-microphone"
+        if "\\capabilityaccessmanager\\consentstore\\location" in key_path:
+            return "uri:ms-settings:privacy-location"
+        if "\\capabilityaccessmanager\\consentstore\\contacts" in key_path:
+            return "uri:ms-settings:privacy-contacts"
+        if "\\capabilityaccessmanager\\consentstore\\appointments" in key_path:
+            return "uri:ms-settings:privacy-calendar"
+        if "\\capabilityaccessmanager\\consentstore\\documentslibrary" in key_path:
+            return "uri:ms-settings:privacy-documents"
+        if "\\capabilityaccessmanager\\consentstore\\pictureslibrary" in key_path:
+            return "uri:ms-settings:privacy-pictures"
+        if "\\capabilityaccessmanager\\consentstore\\videoslibrary" in key_path:
+            return "uri:ms-settings:privacy-videos"
+        if "\\memory management" in key_path or "\\prioritycontrol" in key_path:
+            if value_name in {"pagingfiles", "disablepagingexecutive"}:
+                return "cmd:sysdm.cpl"
+            if value_name == "executeoptions":
+                return "cmd:SystemPropertiesDataExecutionPrevention.exe"
+            return "cmd:SystemPropertiesPerformance.exe"
+
+        # Name hints for settings that share broad key paths.
+        if "power" in name_lower and "plan" in name_lower:
+            return "uri:ms-settings:powersleep"
+        if "hibernate" in name_lower or "wake timer" in name_lower or "lid close" in name_lower:
+            return "cmd:rundll32.exe shell32.dll,Control_RunDLL powercfg.cpl,,3"
+        if "taskbar" in name_lower:
+            return "uri:ms-settings:taskbar"
+        if "start menu" in name_lower:
+            return "uri:ms-settings:personalization-start"
+        if "camera" in name_lower:
+            return "uri:ms-settings:privacy-webcam"
+        if "microphone" in name_lower:
+            return "uri:ms-settings:privacy-microphone"
+        if "location" in name_lower:
+            return "uri:ms-settings:privacy-location"
+
+        # Category fallback.
+        category = getattr(setting, "category", None)
+        category_map: Dict[SettingCategory, str] = {
+            SettingCategory.APPEARANCE: "uri:ms-settings:personalization",
+            SettingCategory.FILE_EXPLORER: "cmd:rundll32.exe shell32.dll,Options_RunDLL 0",
+            SettingCategory.TASKBAR: "uri:ms-settings:taskbar",
+            SettingCategory.POWER: "uri:ms-settings:powersleep",
+            SettingCategory.PRIVACY: "uri:ms-settings:privacy",
+            SettingCategory.KEYBOARD: "uri:ms-settings:mousetouchpad",
+            SettingCategory.SYSTEM: "uri:ms-settings:system",
+            SettingCategory.NETWORK: "uri:ms-settings:network",
+        }
+        return category_map.get(category, "uri:ms-settings:")
+
     def _launch_system_settings(self, setting):
-        """Launch the appropriate Windows system settings for this setting"""
-        import subprocess
-
-        # ------------------------------------------------------------------ #
-        # Full per-setting deep-link map.  All names match settings.json.      #
-        # Fallback logic (category, then generic) follows below.              #
-        # ------------------------------------------------------------------ #
-        SETTINGS_MAP: dict[str, str] = {
-            # ── System Appearance ──────────────────────────────────────────
-            "Desktop Wallpaper":                        "ms-settings:personalization-background",
-            "Wallpaper Style (Stretch/Fill/Fit)":       "ms-settings:personalization-background",
-            "Tile Wallpaper":                           "ms-settings:personalization-background",
-            "App Theme (Light/Dark)":                   "ms-settings:personalization-colors",
-            "System Theme (Light/Dark)":                "ms-settings:personalization-colors",
-            "Accent Color":                             "ms-settings:personalization-colors",
-            "Accent Color (Auto-Selected)":             "ms-settings:personalization-colors",
-            "Accent Color on Title Bars":               "ms-settings:personalization-colors",
-            "Show Accent on Start/Taskbar":             "ms-settings:personalization-colors",
-            "Transparency Effects":                     "ms-settings:personalization-colors",
-            "Taskbar Transparency":                     "ms-settings:personalization-colors",
-            "Desktop Icon Visibility - This PC":        "ms-settings:themes",
-            "Desktop Icon Visibility - Network":        "ms-settings:themes",
-            "Desktop Icon Visibility - Recycle Bin":    "ms-settings:themes",
-            "Desktop Icon Visibility - User's Files":   "ms-settings:themes",
-            "Desktop Icon Size":                        "ms-settings:display",
-            "Desktop Icon Spacing (Horizontal)":        "ms-settings:display",
-            "Desktop Icon Spacing (Vertical)":          "ms-settings:display",
-            "Font Smoothing (ClearType)":               "ms-settings:display",
-            "Font Smoothing Type":                      "ms-settings:display",
-            "Visual Effects - Animations":              "ms-settings:display-advancedgraphics",
-            "Show Shadows Under Windows":               "ms-settings:display-advancedgraphics",
-            "Show Shadows Under Mouse":                 "ms-settings:display-advancedgraphics",
-
-            # ── File Explorer Settings ─────────────────────────────────────
-            # Explorer folder-options have no ms-settings URI; open via shell
-            "Hidden Files":                             "__explorer_options__",
-            "File Extensions":                         "__explorer_options__",
-            "Protected Operating System Files":         "__explorer_options__",
-            "Empty Drives":                             "__explorer_options__",
-            "Navigation Pane - Show All Folders":       "__explorer_options__",
-            "Navigation Pane - Expand to Open Folder":  "__explorer_options__",
-            "Quick Access - Show Recent Files":         "ms-settings:privacy-general",
-            "Quick Access - Show Frequent Folders":     "ms-settings:privacy-general",
-            "File Explorer - Open to Quick Access":     "__explorer_options__",
-            "Check Boxes to Select Items":              "__explorer_options__",
-            "Item Check Boxes":                         "__explorer_options__",
-            "File Explorer - View Type":                "__explorer_options__",
-            "Folder Merge Conflicts":                   "__explorer_options__",
-            "Sharing Wizard":                           "ms-settings:network-shareadvanced",
-            "Recycle Bin - Delete Confirmation":        "__explorer_options__",
-            "Recycle Bin - Maximum Size":               "__explorer_options__",
-            "Recycle Bin - Files Removed Immediately":  "__explorer_options__",
-            "Folder Tips":                              "__explorer_options__",
-            "Sync Provider Notifications":              "ms-settings:privacy-general",
-            "File Explorer - Display Size Info":        "__explorer_options__",
-            "Encrypted/Compressed Files in Color":      "__explorer_options__",
-            "Always Show Icons, Never Thumbnails":      "__explorer_options__",
-            "Display File Icon on Thumbnails":          "__explorer_options__",
-            "Separate Process for Folder Windows":      "__explorer_options__",
-
-            # ── Taskbar & Start Menu ───────────────────────────────────────
-            "Taskbar Alignment":                        "ms-settings:taskbar",
-            "Taskbar Size (Small/Large Icons)":         "ms-settings:taskbar",
-            "Taskbar Location on Screen":               "ms-settings:taskbar",
-            "Auto-Hide Taskbar":                        "ms-settings:taskbar",
-            "Lock Taskbar":                             "ms-settings:taskbar",
-            "Taskbar Badges":                           "ms-settings:taskbar",
-            "Taskbar Corner Overflow":                  "ms-settings:taskbar",
-            "Taskbar Widgets":                          "ms-settings:taskbar",
-            "Taskbar Chat Icon":                        "ms-settings:taskbar",
-            "Taskbar Task View Button":                 "ms-settings:taskbar",
-            "Taskbar People Button":                    "ms-settings:taskbar",
-            "Taskbar Search Box":                       "ms-settings:taskbar",
-            "Taskbar Corner Icons - Pen Menu":          "ms-settings:taskbar",
-            "Taskbar Corner Icons - Touch Keyboard":    "ms-settings:taskbar",
-            "Taskbar Corner Icons - Virtual Touchpad":  "ms-settings:taskbar",
-            "Combine Taskbar Buttons":                  "ms-settings:taskbar",
-            "Multiple Displays - Show Taskbar on All Displays":      "ms-settings:taskbar",
-            "Multiple Displays - Where to Show Buttons":             "ms-settings:taskbar",
-            "Multiple Displays - Combine Buttons on Other Taskbars": "ms-settings:taskbar",
-            "Start Menu - Show Recently Added Apps":    "ms-settings:personalization-start",
-            "Start Menu - Show Most Used Apps":         "ms-settings:personalization-start",
-            "Start Menu - Show Suggestions":            "ms-settings:personalization-start",
-            "Start Menu - Show Recently Opened Items":  "ms-settings:personalization-start",
-            "Start Menu - Size":                        "ms-settings:personalization-start",
-            "Start Menu Layout XML":                    "ms-settings:personalization-start",
-            "Pinned Taskbar Apps":                      "ms-settings:taskbar",
-            "Pinned Start Menu Apps":                   "ms-settings:personalization-start",
-
-            # ── Power Settings ─────────────────────────────────────────────
-            "Active Power Plan":                        "ms-settings:powersleep",
-            "Monitor Timeout (Plugged In)":             "ms-settings:powersleep",
-            "Monitor Timeout (On Battery)":             "ms-settings:powersleep",
-            "Sleep Timeout (Plugged In)":               "ms-settings:powersleep",
-            "Sleep Timeout (On Battery)":               "ms-settings:powersleep",
-            "Hibernate After (Plugged In)":             "ms-settings:powersleep",
-            "Hibernate After (On Battery)":             "ms-settings:powersleep",
-            "Lid Close Action (Plugged In)":            "ms-settings:powersleep",
-            "Lid Close Action (On Battery)":            "ms-settings:powersleep",
-            "Power Button Action (Plugged In)":         "ms-settings:powersleep",
-            "Power Button Action (On Battery)":         "ms-settings:powersleep",
-            "Sleep Button Action (Plugged In)":         "ms-settings:powersleep",
-            "Sleep Button Action (On Battery)":         "ms-settings:powersleep",
-            "Fast Startup":                             "ms-settings:powersleep",
-            "Hibernate":                                "ms-settings:powersleep",
-            "USB Selective Suspend":                    "ms-settings:powersleep",
-            "Processor Power (Minimum, Plugged In)":    "ms-settings:powersleep",
-            "Processor Power (Minimum, On Battery)":    "ms-settings:powersleep",
-            "Processor Power (Maximum, Plugged In)":    "ms-settings:powersleep",
-            "Processor Power (Maximum, On Battery)":    "ms-settings:powersleep",
-            "Processor Cooling Policy":                 "ms-settings:powersleep",
-            "Screen Brightness (Plugged In)":           "ms-settings:display",
-            "Screen Brightness (On Battery)":           "ms-settings:display",
-            "Adaptive Brightness":                      "ms-settings:display",
-            "Wireless Adapter Power Mode":              "ms-settings:powersleep",
-            "PCI Express Link State":                   "ms-settings:powersleep",
-            "Battery Low Level":                        "ms-settings:batterysaver",
-            "Battery Critical Level":                   "ms-settings:batterysaver",
-            "Battery Low Notification":                 "ms-settings:batterysaver",
-            "Battery Critical Action":                  "ms-settings:batterysaver",
-            "Battery Saver":                            "ms-settings:batterysaver",
-            "Battery Saver Threshold":                  "ms-settings:batterysaver",
-            "Allow Wake Timers (Plugged In)":           "ms-settings:powersleep",
-            "Allow Wake Timers (On Battery)":           "ms-settings:powersleep",
-            "Hard Disk Timeout (Plugged In)":           "ms-settings:powersleep",
-            "Hard Disk Timeout (On Battery)":           "ms-settings:powersleep",
-            "Sleep State":                              "ms-settings:powersleep",
-            "Hybrid Sleep (Plugged In)":                "ms-settings:powersleep",
-            "Hybrid Sleep (On Battery)":                "ms-settings:powersleep",
-            "Video Playback (Plugged In)":              "ms-settings:powersleep",
-            "Video Playback (On Battery)":              "ms-settings:powersleep",
-            "Network Connectivity in Standby":          "ms-settings:powersleep",
-            "Energy Saver Brightness Reduction":        "ms-settings:batterysaver",
-
-            # ── Privacy Options ────────────────────────────────────────────
-            "Advertising ID":                           "ms-settings:privacy-general",
-            "Tailored Experiences":                     "ms-settings:privacy-general",
-            "Diagnostics & Feedback Level":             "ms-settings:privacy-feedback",
-            "Feedback Frequency":                       "ms-settings:privacy-feedback",
-            "Inking & Typing Personalization":          "ms-settings:privacy-speechtyping",
-            "Speech Recognition":                       "ms-settings:privacy-speech",
-            "Timeline / Activity History":              "ms-settings:privacy-activityhistory",
-            "Activity History - Enabled":               "ms-settings:privacy-activityhistory",
-            "Publish User Activities":                  "ms-settings:privacy-activityhistory",
-            "Upload User Activities":                   "ms-settings:privacy-activityhistory",
-            "Location Services":                        "ms-settings:privacy-location",
-            "Location Sync":                            "ms-settings:privacy-location",
-            "Camera Access":                            "ms-settings:privacy-webcam",
-            "Microphone Access":                        "ms-settings:privacy-microphone",
-            "Notifications Access":                     "ms-settings:privacy-notifications",
-            "Account Info Access":                      "ms-settings:privacy-accountinfo",
-            "Contacts Access":                          "ms-settings:privacy-contacts",
-            "Calendar Access":                          "ms-settings:privacy-calendar",
-            "Call History Access":                      "ms-settings:privacy-callhistory",
-            "Email Access":                             "ms-settings:privacy-email",
-            "Tasks Access":                             "ms-settings:privacy-tasks",
-            "Messaging Access":                         "ms-settings:privacy-messaging",
-            "Radios Access":                            "ms-settings:privacy-radios",
-            "Background Apps":                          "ms-settings:privacy-backgroundapps",
-            "App Diagnostics":                          "ms-settings:privacy-appdiagnostics",
-            "Automatic File Downloads":                 "ms-settings:privacy-automaticfiledownloads",
-            "Documents Library Access":                 "ms-settings:privacy-documents",
-            "Pictures Library Access":                  "ms-settings:privacy-pictures",
-            "Videos Library Access":                    "ms-settings:privacy-videos",
-            "Network Access":                           "ms-settings:privacy-customdevices",
-            "Clipboard History":                        "ms-settings:clipboard",
-            "Cloud Clipboard Sync":                     "ms-settings:clipboard",
-            "Find My Device":                           "ms-settings:findmydevice",
-
-            # ── Keyboard & Mouse ───────────────────────────────────────────
-            "Mouse - Primary Button":                   "ms-settings:mousetouchpad",
-            "Mouse - Double-Click Speed":               "ms-settings:mousetouchpad",
-            "Mouse - Double-Click Height":              "ms-settings:mousetouchpad",
-            "Mouse - Double-Click Width":               "ms-settings:mousetouchpad",
-            "Mouse - Scroll Lines":                     "ms-settings:mousetouchpad",
-            "Mouse - Scroll Wheel Delta":               "ms-settings:mousetouchpad",
-            "Mouse - Snap to Default Button":           "ms-settings:mousetouchpad",
-            "Mouse - Mouse Speed":                      "ms-settings:mousetouchpad",
-            "Mouse - Mouse Threshold 1":                "ms-settings:mousetouchpad",
-            "Mouse - Mouse Threshold 2":                "ms-settings:mousetouchpad",
-            "Mouse - Enhance Pointer Precision":        "ms-settings:mousetouchpad",
-            "Mouse - Cursor Scheme":                    "ms-settings:easeofaccess-cursorandpointersize",
-            "Mouse - Cursor Size":                      "ms-settings:easeofaccess-cursorandpointersize",
-            "Keyboard - Repeat Delay":                  "ms-settings:keyboard",
-            "Keyboard - Repeat Rate":                   "ms-settings:keyboard",
-            "Touchpad - Tap to Click":                  "ms-settings:devices-touchpad",
-            "Touchpad - Double-Tap to Drag":            "ms-settings:devices-touchpad",
-            "Touchpad - Right-Click Zone":              "ms-settings:devices-touchpad",
-            "Touchpad - Scrolling Direction":           "ms-settings:devices-touchpad",
-            "Touchpad - Sensitivity":                   "ms-settings:devices-touchpad",
-            "Touchpad - Three-Finger Gestures":         "ms-settings:devices-touchpad",
-            "Touchpad - Four-Finger Gestures":          "ms-settings:devices-touchpad",
-            "Touchpad - Swipe Gestures":                "ms-settings:devices-touchpad",
-
-            # ── System & Performance / Accessibility / Gaming ──────────────
-            # Regional & Language
-            "Date Format - Short Date":                 "ms-settings:dateandtime",
-            "Date Format - Long Date":                  "ms-settings:dateandtime",
-            "Time Format":                              "ms-settings:dateandtime",
-            "Time Format with AM/PM":                   "ms-settings:dateandtime",
-            "AM Designator":                            "ms-settings:dateandtime",
-            "PM Designator":                            "ms-settings:dateandtime",
-            "First Day of Week":                        "ms-settings:dateandtime",
-            "Decimal Symbol":                           "ms-settings:regionlanguage",
-            "Thousand Separator":                       "ms-settings:regionlanguage",
-            "List Separator":                           "ms-settings:regionlanguage",
-            "Currency Symbol":                          "ms-settings:regionlanguage",
-            "Currency Positive Format":                 "ms-settings:regionlanguage",
-            "Currency Negative Format":                 "ms-settings:regionlanguage",
-            "Number of Decimal Digits":                 "ms-settings:regionlanguage",
-            "Leading Zeros":                            "ms-settings:regionlanguage",
-            "Measurement System":                       "ms-settings:regionlanguage",
-            "Time Zone":                                "ms-settings:dateandtime",
-            "Daylight Saving Time Enabled":             "ms-settings:dateandtime",
-            "Country/Region":                           "ms-settings:regionlanguage",
-
-            # Accessibility - Narrator
-            "Narrator - Auto Start":                    "ms-settings:easeofaccess-narrator",
-            "Narrator - Voice":                         "ms-settings:easeofaccess-narrator",
-            "Narrator - Speed":                         "ms-settings:easeofaccess-narrator",
-            "Narrator - Volume":                        "ms-settings:easeofaccess-narrator",
-
-            # Accessibility - Magnifier
-            "Magnifier - Zoom Level":                   "ms-settings:easeofaccess-magnifier",
-            "Magnifier - Follow Focus":                 "ms-settings:easeofaccess-magnifier",
-            "Magnifier - Follow Mouse":                 "ms-settings:easeofaccess-magnifier",
-            "Magnifier - Follow Caret":                 "ms-settings:easeofaccess-magnifier",
-            "Magnifier - Docked Mode":                  "ms-settings:easeofaccess-magnifier",
-
-            # Accessibility - High Contrast / Keys
-            "High Contrast - Enable":                   "ms-settings:easeofaccess-highcontrast",
-            "High Contrast - Theme":                    "ms-settings:easeofaccess-highcontrast",
-            "Sticky Keys":                              "ms-settings:easeofaccess-keyboard",
-            "Filter Keys":                              "ms-settings:easeofaccess-keyboard",
-            "Toggle Keys":                              "ms-settings:easeofaccess-keyboard",
-            "Mouse Keys":                               "ms-settings:easeofaccess-mouse",
-            "Mouse Keys - Speed":                       "ms-settings:easeofaccess-mouse",
-            "Mouse Keys - Acceleration":                "ms-settings:easeofaccess-mouse",
-
-            # Accessibility - Closed Captions
-            "Closed Captions":                          "ms-settings:easeofaccess-closedcaptioning",
-            "Caption Color":                            "ms-settings:easeofaccess-closedcaptioning",
-            "Caption Background Color":                 "ms-settings:easeofaccess-closedcaptioning",
-            "Caption Font Size":                        "ms-settings:easeofaccess-closedcaptioning",
-            "Visual Notifications for Sound":           "ms-settings:easeofaccess-otheroptions",
-            "Text Cursor - Thickness":                  "ms-settings:easeofaccess-cursor",
-            "Text Cursor - Blink Rate":                 "ms-settings:easeofaccess-cursor",
-
-            # Gaming
-            "Game Mode":                                "ms-settings:gaming-gamemode",
-            "Game Bar - Enable":                        "ms-settings:gaming-gamebar",
-            "Game Bar - Shortcut":                      "ms-settings:gaming-gamebar",
-            "Game Bar - Controller Shortcut":           "ms-settings:gaming-gamebar",
-            "Captures - Record in Background":          "ms-settings:gaming-gamedvr",
-            "Captures - Max Recording Length":          "ms-settings:gaming-gamedvr",
-            "Captures - Audio Quality":                 "ms-settings:gaming-gamedvr",
-            "Captures - Video Quality":                 "ms-settings:gaming-gamedvr",
-            "Captures - Framerate":                     "ms-settings:gaming-gamedvr",
-            "Captures - Save Location":                 "ms-settings:gaming-gamedvr",
-            "TruePlay (Anti-Cheat)":                    "ms-settings:gaming-trueplay",
-
-            # System & Performance
-            "Visual Effects - Adjust for Best Performance": "ms-settings:display-advancedgraphics",
-            "Show Windows Contents While Dragging":     "ms-settings:display-advancedgraphics",
-            "Smooth Edges of Screen Fonts":             "ms-settings:display-advancedgraphics",
-            "Animate Controls and Elements":            "ms-settings:display-advancedgraphics",
-            "Show Thumbnails Instead of Icons":         "ms-settings:display-advancedgraphics",
-            "Save Taskbar Thumbnail Previews":          "ms-settings:taskbar",
-            "Virtual Memory Size":                      "ms-settings:about",
-            "Disable Pagefile":                         "ms-settings:about",
-            "Large System Cache":                       "ms-settings:about",
-            "Processor Scheduling - Programs/Background": "ms-settings:about",
-            "DEP (Data Execution Prevention)":          "ms-settings:about",
-        }
-
-        # ── Category-level fallbacks ───────────────────────────────────────
-        from src.models.setting import SettingCategory
-        CATEGORY_FALLBACK: dict = {
-            SettingCategory.APPEARANCE:     "ms-settings:personalization",
-            SettingCategory.FILE_EXPLORER:  "__explorer_options__",
-            SettingCategory.TASKBAR:        "ms-settings:taskbar",
-            SettingCategory.POWER:          "ms-settings:powersleep",
-            SettingCategory.PRIVACY:        "ms-settings:privacy",
-            SettingCategory.KEYBOARD:       "ms-settings:mousetouchpad",
-            SettingCategory.SYSTEM:         "ms-settings:system",
-            SettingCategory.NETWORK:        "ms-settings:network",
-        }
-
-        setting_name = setting.name
-        settings_uri: str | None = None
-
-        # 1. Exact name match
-        if setting_name in SETTINGS_MAP:
-            settings_uri = SETTINGS_MAP[setting_name]
-        else:
-            # 2. Partial / substring match (case-insensitive)
-            name_lower = setting_name.lower()
-            for key, uri in SETTINGS_MAP.items():
-                if key.lower() in name_lower or name_lower in key.lower():
-                    settings_uri = uri
-                    break
-
-        # 3. Category fallback
-        if not settings_uri:
-            settings_uri = CATEGORY_FALLBACK.get(
-                getattr(setting, "category", None), "ms-settings:"
-            )
-
-        # ── Special case: File Explorer Folder Options ─────────────────────
-        if settings_uri == "__explorer_options__":
-            # Open Explorer Folder Options dialog directly (no ms-settings page)
-            try:
-                import subprocess as _sp
-                _sp.Popen(
-                    ["rundll32.exe", "shell32.dll,Options_RunDLL", "0"],
-                    shell=False
-                )
-            except Exception:
-                pass
-            return
-
-        # ── Open the ms-settings URI ───────────────────────────────────────
+        """Launch the best related Windows Settings/Control Panel location."""
+        target = self._resolve_system_settings_target(setting)
         try:
-            import subprocess as _sp
-            _sp.Popen(f"start {settings_uri}", shell=True)
+            if target.startswith("uri:"):
+                uri = target[4:]
+                subprocess.Popen(f"start {uri}", shell=True)
+            elif target.startswith("cmd:"):
+                cmd = target[4:]
+                subprocess.Popen(cmd, shell=True)
         except Exception:
+            # Non-blocking UX: fail quietly so manual edits still work.
             pass
 
     def _create_system_settings_link(self, parent, setting):
@@ -1426,7 +1333,7 @@ class MainWindow:
         # Create a link-style button
         link_btn = ttk.Button(
             parent,
-            text="⚙️ Open in System Settings",
+            text="Open Related Setting",
             command=lambda: self._launch_system_settings(setting),
             style="Link.TButton"
         )
@@ -1807,9 +1714,6 @@ class MainWindow:
                     for s in category_settings:
                         val = self.registry_handler.read_value(s.hive, s.key_path, s.value_name)
                         if val is not None:
-                            # Convert bytes to string if needed
-                            if isinstance(val, bytes):
-                                val = val.decode('utf-8', errors='replace')
                             s.value = val
                             settings.append(s)
             
@@ -2159,51 +2063,6 @@ class MainWindow:
                 
         ttk.Button(footer, text="Select All", command=lambda: toggle_all(True)).pack(side=tk.LEFT, padx=5)
         ttk.Button(footer, text="Deselect All", command=lambda: toggle_all(False)).pack(side=tk.LEFT, padx=5)
-
-    def _refresh_history_tab(self):
-        """Clear and reload the history treeview with the latest data."""
-        for i in self.history_tree.get_children():
-            self.history_tree.delete(i)
-        
-        history_data = self.history_manager.get_history()
-        for item in history_data:
-            self.history_tree.insert("", "end", iid=item[0], values=item[1:])
-
-    def _revert_selected_change(self):
-        """Revert the currently selected change in the history treeview."""
-        selected_items = self.history_tree.selection()
-        if not selected_items:
-            messagebox.showwarning("No Selection", "Please select a change from the list to revert.")
-            return
-
-        change_id = selected_items[0]
-
-        details = self.history_manager.get_change_details(int(change_id))
-        if not details:
-            messagebox.showerror("Error", "Could not retrieve change details to perform revert.")
-            return
-
-        hive, key_path, value_name, value_type, old_value_str = details
-
-        if messagebox.askyesno("Confirm Revert", f"Are you sure you want to revert the change to '{value_name}'?"):
-            # Convert old_value back to its original type
-            final_val = old_value_str
-            if old_value_str != "N/A":
-                if value_type == "REG_DWORD":
-                    try:
-                        final_val = int(old_value_str)
-                    except (ValueError, TypeError):
-                        messagebox.showerror(
-                            "Revert Error",
-                            f"Cannot convert old value '{old_value_str}' to an integer for REG_DWORD.",
-                        )
-                        return
-
-            if self.registry_handler.write_value(hive, key_path, value_name, value_type, final_val):
-                messagebox.showinfo("Success", f"Successfully reverted '{value_name}'.")
-                self._refresh_history_tab()
-            else:
-                messagebox.showerror("Error", f"Failed to write to the registry to revert '{value_name}'.")
 
     def apply_preset(self, preset_id):
         msg = (
