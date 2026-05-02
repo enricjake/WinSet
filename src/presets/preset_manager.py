@@ -179,14 +179,11 @@ class PresetManager:
         try:
             # ---- Dangerous-string check ----
             # Reject paths containing characters or keywords that could
-            # indicate command injection or path traversal attempts.
-            # IMPORTANT: Check the ORIGINAL input string, not the resolved path,
-            # to catch ".." and other traversal attempts that might resolve to
-            # allowed directories.
+            # indicate command injection.
             dangerous_strings = [
                 ";",
                 "--",
-                "..",
+                "`",
                 '"',
                 "'",
                 "*",
@@ -195,21 +192,13 @@ class PresetManager:
                 "INSERT",
                 "UPDATE",
             ]
-            original_path_lower = path.lower()  # Use original input for checking
+            original_path_lower = path.lower()
             for s in dangerous_strings:
                 if s in original_path_lower:
                     raise ValueError(f"Dangerous string detected in path: {s}")
 
-            # ---- Additional traversal check ----
-            # Ensure the path doesn't try to escape via ".." after normalization
-            # by comparing resolved path components against original intent
-            import os
-
-            normalized = os.path.normpath(path)
-            if ".." in normalized:
-                raise ValueError(f"Path traversal detected in path: {path}")
-
-            # Resolve the path to an absolute, symlink-resolved form
+            # Resolve the path to an absolute, symlink-resolved form FIRST
+            # This is critical to prevent path traversal (e.g. using ".." or symlinks)
             safe_path = Path(path).resolve()
 
             # ---- Allowed-directory check ----
@@ -224,29 +213,30 @@ class PresetManager:
             home_dir = Path(os.path.expanduser("~")).resolve()
             is_home_path = home_dir in safe_path.parents or safe_path == home_dir
 
-            if not is_temp_path and not is_home_path:
-                # Project root (three levels up from this source file)
-                base_dir = Path(
-                    os.path.dirname(
-                        os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-                    )
-                ).resolve()
-                # Documents/WinSet/presets
-                user_winset = (
-                    Path(os.path.expanduser("~")) / "Documents" / "WinSet" / "presets"
+            # Project root (three levels up from this source file)
+            base_dir = Path(
+                os.path.dirname(
+                    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
                 )
-                user_winset = user_winset.resolve()
+            ).resolve()
 
-                # Reject if the path is outside both the project root and the
-                # user WinSet presets directory.
-                if base_dir not in safe_path.parents and safe_path != base_dir:
-                    if (
-                        user_winset not in safe_path.parents
-                        and safe_path != user_winset
-                    ):
-                        raise ValueError(
-                            f"Preset path '{path}' is outside allowed directories"
-                        )
+            # Documents/WinSet/presets
+            user_winset = (
+                Path(os.path.expanduser("~")) / "Documents" / "WinSet" / "presets"
+            ).resolve()
+
+            # Verify the resolved path is within at least one allowed directory
+            is_allowed = (
+                is_temp_path or 
+                is_home_path or 
+                (base_dir in safe_path.parents or safe_path == base_dir) or
+                (user_winset in safe_path.parents or safe_path == user_winset)
+            )
+
+            if not is_allowed:
+                raise ValueError(
+                    f"Preset path '{path}' resolves to '{safe_path}', which is outside allowed directories"
+                )
 
             # Create the directory (and parents) if it doesn't exist yet
             os.makedirs(safe_path, exist_ok=True)

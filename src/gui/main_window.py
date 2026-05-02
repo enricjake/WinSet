@@ -526,6 +526,20 @@ class MainWindow:
 
         # src/gui/main_window.py
 
+    def _refresh_presets_tab(self):
+        """Clear and rebuild the Presets tab content.
+
+        This is called after creating the presets folder to refresh
+        the preset list without stacking new UI widgets on top
+        of existing ones.
+        """
+        # Destroy all existing widgets in the presets frame
+        for widget in self.presets_frame.winfo_children():
+            widget.destroy()
+
+        # Reinitialize the scrolling infrastructure references
+        self._create_presets_tab()
+
     def _create_presets_tab(self):
         """Build the Presets tab: standard and custom preset cards.
 
@@ -588,16 +602,41 @@ class MainWindow:
             text="\u2795 Create Custom Preset",
             command=self.create_custom_preset,
             style="Accent.TButton",
+        ).pack(side=tk.LEFT, padx=(0, 10))
+
+        # Quick button to create presets folder or open it
+        # Always show this button so users can easily add new presets
+        def quick_create_folder():
+            if self.preset_manager.ensure_user_presets_dir():
+                # Open the folder in Explorer for easy file management
+                folder_path = os.path.join(os.path.expanduser("~"), "Documents", "WinSet", "presets")
+                try:
+                    os.startfile(folder_path)
+                except Exception:
+                    pass
+                messagebox.showinfo(
+                    "Presets Folder",
+                    "Presets folder opened:\n"
+                    f"{folder_path}\n\n"
+                    "Place your custom .preset.json files here.",
+                )
+                self._refresh_presets_tab()  # Refresh tab without stacking new UI
+            else:
+                messagebox.showerror("Error", "Failed to create presets folder.")
+
+        ttk.Button(
+            action_frame,
+            text="[+] Create Presets Folder",
+            command=quick_create_folder,
+            style="TButton",
         ).pack(side=tk.LEFT)
+
+
         # Custom preset explanation
         help_frame = ttk.LabelFrame(
             container, text="How Custom Presets Work", padding=12
         )
         help_frame.pack(fill=tk.X, pady=(0, 20))
-
-        # Check if user presets directory exists to provide better onboarding
-        folder_exists = self.preset_manager.user_presets_dir_exists()
-        user_doc_path = f"{os.path.expanduser('~')}\\Documents\\WinSet\\presets"
 
         redrafted_help = (
             "Custom presets allow you to save a specific collection of settings and apply them anytime as an overlay.\n\n"
@@ -605,8 +644,9 @@ class MainWindow:
             "• CREATE: Click 'Create Custom Preset' to select settings and set their values using your current system as a template.\n"
             "• SAVE & APPLY: Once created, you can apply settings immediately or save them to a file for later use.\n"
             "• ALTERNATIVES: Use 'Import Settings' in the Manual tab to load any WinSet JSON configuration directly.\n\n"
-            "To see your saved presets here, ensure they end in '.preset.json' and are stored in:\n"
-            f"➜ {user_doc_path}"
+            "IMPORTANT: To use custom presets, you must first create the presets folder. The app will only read custom preset files from:\n"
+            "➜ %USERPROFILE%\\Documents\\WinSet\\presets\n\n"
+            "Create this folder manually, or use the 'Create Folder Now' button below if the folder doesn't exist yet."
         )
 
         ttk.Label(
@@ -616,35 +656,6 @@ class MainWindow:
             justify=tk.LEFT,
             wraplength=950,
         ).pack(anchor="w")
-
-        if not folder_exists:
-            prompt_frame = ttk.Frame(help_frame, padding=(0, 10, 0, 0))
-            prompt_frame.pack(fill=tk.X)
-
-            error_icon = "\u26a0\ufe0f"  # Warning icon
-            ttk.Label(
-                prompt_frame,
-                text=f"{error_icon} Presets folder not found.",
-                foreground="#ff9800",
-                font=("Segoe UI", 10, "bold"),
-            ).pack(side=tk.LEFT)
-
-            def create_folder():
-                if self.preset_manager.ensure_user_presets_dir():
-                    messagebox.showinfo(
-                        "Success", "Presets folder created successfully!"
-                    )
-                    self._create_presets_tab()  # Refresh tab
-                else:
-                    messagebox.showerror("Error", "Failed to create directory.")
-
-            ttk.Button(
-                prompt_frame,
-                text="Create Folder Now",
-                command=create_folder,
-                style="Accent.TButton",
-                width=20,
-            ).pack(side=tk.LEFT, padx=15)
 
         # Standard Presets Section
         ttk.Label(

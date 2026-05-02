@@ -124,7 +124,7 @@ class PowerShellHandler:
 
     def run_command(self, command: str, timeout: int = 30) -> Tuple[bool, str]:
         """
-        Execute a PowerShell command.
+        Execute a PowerShell command using EncodedCommand for security.
 
         Args:
             command: The PowerShell command string to execute.
@@ -133,40 +133,31 @@ class PowerShellHandler:
         Returns:
             Tuple containing boolean success flag and the command output or error message.
         """
+        import base64
+
         # Validate the command against length, pattern, and character checks
-        # before spawning any subprocess. If validation fails the error message
-        # from _validate_command is returned directly to the caller.
+        # before spawning any subprocess.
         is_valid, error = self._validate_command(command)
         if not is_valid:
             return False, f"Command validation failed: {error}"
 
         try:
-            # Launch PowerShell as a subprocess with security-focused flags:
-            #   -NoProfile           : skip loading user PowerShell profile
-            #                          scripts (avoids side effects)
-            #   -ExecutionPolicy Bypass : allow script execution without
-            #                          changing the system-wide policy
-            #   -Command <command>   : execute the supplied command string
-            #
-            # creationflags=CREATE_NO_WINDOW suppresses the console window on
-            # Windows so that no visible terminal pops up during WinSet
-            # operations.
-            #
-            # capture_output=True captures both stdout and stderr so we can
-            # relay results back to the GUI.
-            #
-            # text=True decodes the output as UTF-8 strings instead of bytes.
-            #
-            # timeout limits how long the subprocess can run, preventing
-            # runaway commands from hanging the application.
+            # Use -EncodedCommand to prevent shell injection and handle
+            # special characters/quotes more reliably.
+            # PowerShell expects UTF-16LE encoded base64 string.
+            encoded_command = base64.b64encode(
+                command.encode("utf-16-le")
+            ).decode("ascii")
+
             result = subprocess.run(  # nosec B603
                 [
                     self.powershell_path,
                     "-NoProfile",
+                    "-NonInteractive",
                     "-ExecutionPolicy",
                     "Bypass",
-                    "-Command",
-                    command,
+                    "-EncodedCommand",
+                    encoded_command,
                 ],
                 capture_output=True,
                 text=True,

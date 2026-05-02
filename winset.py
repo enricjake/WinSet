@@ -53,11 +53,14 @@ def check_admin():
         bool: True if the process has admin rights, False otherwise.
     """
     try:
-        # Windows-specific API call via ctypes to determine admin status.
-        return ctypes.windll.shell32.IsUserAnAdmin()
+        # IsElevated() is more reliable than IsUserAnAdmin() on modern Windows.
+        return ctypes.windll.shell32.IsElevated() != 0
     except (OSError, AttributeError):
-        # Fallback: if the API is unavailable (e.g. non-Windows), assume not admin.
-        return False
+        # Fallback for older Windows or non-Windows environments
+        try:
+            return ctypes.windll.shell32.IsUserAnAdmin() != 0
+        except Exception:
+            return False
 
 
 def is_frozen():
