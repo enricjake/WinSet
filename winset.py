@@ -136,6 +136,54 @@ def main():
     # Reveal the window now that the GUI is fully set up.
     root.deiconify()
 
+    # Set the application icon AFTER window is visible
+    try:
+        from ctypes import wintypes
+
+        # Load the icon
+        hicon = None
+
+        if is_frozen():
+            # When frozen, load icon from the exe
+            exe_path = sys.executable
+            try:
+                # Use ExtractIcon to get icon from exe
+                hicon = ctypes.windll.shell32.ExtractIconW(0, exe_path, 0)
+            except Exception:
+                pass
+        else:
+            # When running from source, use the icon.ico file
+            icon_path = os.path.join(os.path.dirname(__file__), "docs", "icon.ico")
+            if os.path.exists(icon_path):
+                # LoadImage to load the icon from file
+                LR_LOADFROMFILE = 0x0010
+                IMAGE_ICON = 1
+                hicon = ctypes.windll.user32.LoadImageW(0, icon_path, IMAGE_ICON, 0, 0, LR_LOADFROMFILE)
+
+        # Set icon using Windows API for proper taskbar icon
+        if hicon and hicon != 0:
+            # Get window handle and set icon
+            hwnd = ctypes.windll.user32.GetParent(root.winfo_id())
+            WM_SETICON = 0x0080
+            ICON_SMALL = 0
+            ICON_BIG = 1
+
+            ctypes.windll.user32.SendMessageW(hwnd, WM_SETICON, ICON_SMALL, hicon)
+            ctypes.windll.user32.SendMessageW(hwnd, WM_SETICON, ICON_BIG, hicon)
+
+        # Force update
+        root.update_idletasks()
+
+    except Exception as e:
+        logger.warning(f"Failed to set icon: {e}")
+        # Fallback to tkinter's iconbitmap
+        try:
+            icon_path = os.path.join(os.path.dirname(__file__), "docs", "icon.ico")
+            if os.path.exists(icon_path):
+                root.iconbitmap(icon_path)
+        except Exception:
+            pass
+
     # Start the Tkinter event loop — blocks until the window is closed.
     root.mainloop()
 
@@ -145,4 +193,3 @@ def main():
 if __name__ == "__main__":
     # Entry point when running this script directly (not imported as a module).
     main()
-

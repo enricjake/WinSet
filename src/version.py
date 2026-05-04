@@ -10,4 +10,4 @@ WinSet version information.
 #   - PRERELEASE (-alpha): Denotes a pre-release identifier indicating the software is still in early development/testing and not considered production-ready.
 # This value is used throughout WinSet for display in the UI, logging, update checks,
 # and to ensure configuration compatibility across tool versions.
-VERSION = "0.0.4-alpha"
+VERSION = "0.0.5-alpha"

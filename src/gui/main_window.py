@@ -20,6 +20,9 @@ import os  # Filesystem path operations
 import copy  # Deep-copy for preset configuration objects
 import threading  # Background task execution to keep UI responsive
 import time  # Time-related utilities (currently unused but reserved)
+import re  # Regular expressions
+import binascii  # Binary-to-ASCII conversions
+import struct  # C-style structure packing/unpacking
 from typing import (
     Optional,
     Dict,
@@ -138,6 +141,7 @@ class MainWindow:
         self.powershell_handler = PowerShellHandler()
         self.setting_loader = SettingLoader()
         self.history_manager = HistoryManager()
+        self.registry_cache: Dict[tuple, Any] = {}  # Cache for registry values to prevent UI lag
 
         # ── Category checkbox state (used in export/import dialogs) ──────
         self.category_vars: Dict[str, tk.BooleanVar] = {}
@@ -842,6 +846,9 @@ class MainWindow:
         self._bind_scroll_events()
         search_entry.bind("<KeyRelease>", self._on_search)
 
+        # Populate settings once at creation to cache the list
+        self.refresh_manual_config()
+
     def _create_history_tab(self):
         """Build the History tab: a treeview of all recorded setting changes.
 
@@ -1095,13 +1102,12 @@ class MainWindow:
         """Handle tab change events by refreshing content and rebinding scroll events.
 
         Each tab has different refresh requirements:
-        - Manual: rebuild setting rows from settings.json.
+        - Manual: rebind scroll events (content is cached).
         - Home/Presets: rebind scroll events (content is static).
         - History: reload the treeview from the SQLite database.
         """
         selected_tab = self.notebook.tab(self.notebook.select(), "text")
         if "Manual Configuration" in selected_tab:
-            self.refresh_manual_config()
             self.root.after(100, self._rebind_scroll_events)
         elif "Home" in selected_tab:
             # Rebind home tab scroll events when switching to home tab
@@ -1114,9 +1120,11 @@ class MainWindow:
     def _on_search(self, event):
         """Rebuild the Manual Configuration setting rows when the search query changes.
 
-        The search filters settings by name and description (case-insensitive).
+        Uses a timer to debounce the search and prevent UI lag during typing.
         """
-        self.refresh_manual_config()
+        if hasattr(self, '_search_timer'):
+            self.root.after_cancel(self._search_timer)
+        self._search_timer = self.root.after(300, self.refresh_manual_config)
 
     def _on_mouse_wheel(self, event):
         """Scroll the Manual Configuration canvas in response to mouse wheel.
@@ -1198,6 +1206,15 @@ class MainWindow:
 
         self.root.after(50, self._rebind_scroll_events)
 
+    def _get_cached_registry_value(self, setting):
+        """Retrieve a registry value from cache, or read it from the system if not cached."""
+        cache_key = (setting.hive, setting.key_path, setting.value_name)
+        if cache_key not in self.registry_cache:
+            self.registry_cache[cache_key] = self.registry_handler.read_value(
+                *cache_key
+            )
+        return self.registry_cache[cache_key]
+
     def _create_setting_row(self, parent, setting, is_alt=False):
         """Create an expandable row for a single setting in the Manual Configuration tab.
 
@@ -1224,10 +1241,8 @@ class MainWindow:
         inner_row = tk.Frame(row_frame, bg=bg, padx=10, pady=8)
         inner_row.pack(fill=tk.X)
 
-        # Check current state
-        current_val = self.registry_handler.read_value(
-            setting.hive, setting.key_path, setting.value_name
-        )
+        # Check current state using cache to prevent UI lag
+        current_val = self._get_cached_registry_value(setting)
 
         # Setting name (clickable)
         setting_id = f"setting_{setting.id}"
@@ -1304,8 +1319,13 @@ class MainWindow:
 
         buttons = []
         slider_var = None
+        checkbox_vars = None
 
-        if self._should_use_slider(setting, options):
+        if self._should_use_checkboxes(setting):
+            checkbox_vars = self._create_checkbox_controls(
+                options_frame, setting, current_val, setting_id
+            )
+        elif self._should_use_slider(setting, options):
             slider_var = self._create_slider_control(
                 options_frame, setting, current_val, options, setting_id
             )
@@ -1353,6 +1373,7 @@ class MainWindow:
             "options_frame": options_container,  # Store the container for pack/forget
             "buttons": buttons,
             "slider_var": slider_var,
+            "checkbox_vars": checkbox_vars,
             "current_value_label": current_value_label,
         }
 
@@ -1438,6 +1459,148 @@ class MainWindow:
         if len(options) > 0:
             return False
         return True
+
+    def _should_use_checkboxes(self, setting):
+        """Determine if setting should use checkbox controls (REG_BINARY + option_hints)"""
+        if setting.value_type != "REG_BINARY":
+            return False
+        if not hasattr(setting, "option_hints") or not setting.option_hints:
+            return False
+        return True
+
+    def _create_checkbox_controls(self, parent, setting, current_val, setting_id):
+        """Create checkbox controls for REG_BINARY setting with option_hints"""
+        import re
+        import binascii
+        import struct
+
+        # Parse current binary value to determine which bits are set
+        bit_state = {}
+        if current_val:
+            try:
+                if isinstance(current_val, str):
+                    hex_str = current_val.replace(" ", "")
+                    binary_data = binascii.unhexlify(hex_str)
+                elif isinstance(current_val, (bytes, bytearray)):
+                    binary_data = current_val
+                else:
+                    binary_data = None
+
+                if binary_data:
+                    padded = binary_data.ljust(4, b'\x00')
+                    int_value = struct.unpack('<I', padded[:4])[0]
+                    for bit in range(32):
+                        bit_state[bit] = (int_value & (1 << bit)) != 0
+            except Exception:
+                pass
+
+        # Store current binary value for later use
+        setting._current_binary_value = current_val
+
+        # Create checkboxes for each option in option_hints
+        checkbox_vars = {}
+        options_frame = ttk.Frame(parent)
+        options_frame.pack(fill=tk.X, pady=(0, 10))
+
+        ttk.Label(options_frame, text="Options:", style="Description.TLabel").pack(
+            anchor="w", pady=(0, 5)
+        )
+
+        # Sort options by bit number extracted from description
+        sorted_options = []
+        for option_name, description in setting.option_hints.items():
+            bit_match = re.search(r'Bit\s*(\d+)', description, re.IGNORECASE)
+            if bit_match:
+                bit_num = int(bit_match.group(1))
+                sorted_options.append((bit_num, option_name, description))
+        sorted_options.sort(key=lambda x: x[0])
+
+        for bit_num, option_name, description in sorted_options:
+            var = tk.BooleanVar(value=bit_state.get(bit_num, False))
+            checkbox_vars[bit_num] = var
+
+            cb_frame = tk.Frame(options_frame, bg=self.bg_color)
+            cb_frame.pack(fill=tk.X, pady=2)
+
+            cb = tk.Checkbutton(
+                cb_frame,
+                text=option_name,
+                variable=var,
+                bg=self.bg_color,
+                fg=self.fg_color,
+                selectcolor=self.bg_color,
+                activebackground=self.bg_color,
+                font=("Segoe UI", 10),
+                cursor="hand2",
+            )
+            cb.pack(anchor="w")
+
+            if description:
+                self._create_tooltip(cb, description)
+
+        def apply_checkboxes():
+            self._apply_checkbox_value(setting, checkbox_vars, setting_id)
+
+        ttk.Button(
+            options_frame,
+            text="Apply Selected Options",
+            command=apply_checkboxes,
+            style="Accent.TButton",
+        ).pack(anchor="w", pady=(10, 0))
+
+        return checkbox_vars
+
+    def _apply_checkbox_value(self, setting, checkbox_vars, setting_id):
+        """Apply checkbox settings by constructing new binary value"""
+        # Read the current full binary value from registry to preserve all bytes
+        current_val = self.registry_handler.read_value(
+            setting.hive, setting.key_path, setting.value_name
+        )
+
+        # Start with the full current binary data, or empty if not present
+        if current_val:
+            if isinstance(current_val, str):
+                hex_str = current_val.replace(" ", "")
+                full_data = bytearray(binascii.unhexlify(hex_str))
+            elif isinstance(current_val, (bytes, bytearray)):
+                full_data = bytearray(current_val)
+            else:
+                full_data = bytearray(4)
+        else:
+            full_data = bytearray(4)
+
+        # Ensure we have at least 4 bytes to work with
+        while len(full_data) < 4:
+            full_data.append(0)
+
+        # Modify only the first 4 bytes based on checkbox states
+        int_value = struct.unpack('<I', full_data[:4])[0]
+
+        for bit_num, var in checkbox_vars.items():
+            if var.get():
+                int_value |= (1 << bit_num)
+            else:
+                int_value &= ~(1 << bit_num)
+
+        # Update the first 4 bytes with the new value
+        full_data[:4] = struct.pack('<I', int_value)
+
+        if self.registry_handler.write_value(
+            setting.hive, setting.key_path, setting.value_name,
+            setting.value_type, bytes(full_data)
+        ):
+            if setting_id in self.manual_row_widgets:
+                row_data = self.manual_row_widgets[setting_id]
+                if 'current_value_label' in row_data:
+                    friendly_label = self._get_friendly_label_for_value(setting, bytes(full_data))
+                    row_data['current_value_label'].config(
+                        text=f"Current: {friendly_label}"
+                    )
+
+            if hasattr(self, 'status_label') and self.status_label:
+                self.status_label.config(text="Settings applied successfully!")
+        else:
+            messagebox.showerror("Error", f"Failed to apply setting: {setting.name}")
 
     def _create_slider_control(
         self, parent, setting, current_val, options, setting_id, callback=None
@@ -1790,6 +1953,41 @@ class MainWindow:
 
         # Handle REG_BINARY settings specially
         if setting.value_type == "REG_BINARY":
+            # Check if this setting has option_hints (checkboxes)
+            if hasattr(setting, "option_hints") and setting.option_hints:
+                # Count how many options are enabled
+                import re
+                import binascii
+                import struct
+
+                enabled_count = 0
+                total_count = 0
+
+                try:
+                    if isinstance(current_val, str):
+                        hex_str = current_val.replace(" ", "")
+                        binary_data = binascii.unhexlify(hex_str)
+                    elif isinstance(current_val, (bytes, bytearray)):
+                        binary_data = current_val
+                    else:
+                        binary_data = None
+
+                    if binary_data:
+                        padded = binary_data.ljust(4, b'\x00')
+                        int_value = struct.unpack('<I', padded[:4])[0]
+
+                        for option_name, description in setting.option_hints.items():
+                            bit_match = re.search(r'Bit\s*(\d+)', description, re.IGNORECASE)
+                            if bit_match:
+                                bit_num = int(bit_match.group(1))
+                                total_count += 1
+                                if (int_value & (1 << bit_num)) != 0:
+                                    enabled_count += 1
+
+                        return f"{enabled_count} of {total_count} effects enabled"
+                except Exception:
+                    pass
+
             # Store setting name for binary parsing
             self._current_setting_name = setting.name
             parsed_value = self._parse_binary_setting_value(setting, current_val)
@@ -2263,6 +2461,8 @@ class MainWindow:
         )
 
         if success:
+            # Update cache to reflect the change
+            self.registry_cache[(setting.hive, setting.key_path, setting.value_name)] = final_val
             self.history_manager.log_change(setting, old_value, final_val)
             if getattr(setting, "requires_restart", False):
                 self.restart_pending = True
@@ -2308,10 +2508,8 @@ class MainWindow:
         if not setting:
             return
 
-        # Read current registry value
-        current_val = self.registry_handler.read_value(
-            setting.hive, setting.key_path, setting.value_name
-        )
+        # Read current registry value from cache (updated by _apply_and_log_change)
+        current_val = self._get_cached_registry_value(setting)
 
         # Update current value display
         friendly_label = self._get_friendly_label_for_value(setting, current_val)

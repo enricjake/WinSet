@@ -200,10 +200,16 @@
         "key": "Control Panel\\Desktop",
         "value": "UserPreferencesMask",
         "type": "REG_BINARY",
-        "values": "Complex binary - controls various animation settings",
-        "description": "Complex binary value controlling visual effects",
+        "description": "Controls window animations and visual effects",
         "option_hints": {
-          "Complex binary": "This setting controls multiple visual effects. Use System Settings for detailed configuration."
+          "Animate windows when minimizing/maximizing": "Bit 0: Slide windows open/closed",
+          "Slide open combo boxes": "Bit 1: Animate dropdown menus",
+          "Fade or slide menus into view": "Bit 2: Menu animation effect",
+          "Show shadows under mouse pointer": "Bit 3: Pointer shadow effect",
+          "Fade or slide ToolTips into view": "Bit 4: Tooltip animation",
+          "Fade out menu items after clicking": "Bit 5: Menu item fade effect",
+          "Show shadows under windows": "Bit 6: Window shadow effect",
+          "Animate controls and elements": "Bit 7: Control animation inside windows"
         }
       },
       {
@@ -2126,7 +2132,23 @@
         "key": "Control Panel\\Desktop",
         "value": "UserPreferencesMask",
         "type": "REG_BINARY",
-        "description": "Complex binary - controls various animation settings"
+        "description": "Controls animation of controls and elements inside windows",
+        "option_hints": {
+          "Animate windows when minimizing/maximizing": "Bit 0: Slide windows open/closed",
+          "Slide open combo boxes": "Bit 1: Animate dropdown menus",
+          "Fade or slide menus into view": "Bit 2: Menu animation effect",
+          "Show shadows under mouse pointer": "Bit 3: Pointer shadow effect",
+          "Fade or slide ToolTips into view": "Bit 4: Tooltip animation",
+          "Fade out menu items after clicking": "Bit 5: Menu item fade effect",
+          "Show shadows under windows": "Bit 6: Window shadow effect",
+          "Animate controls and elements": "Bit 7: Control animation inside windows",
+          "Smooth-scroll list boxes": "Bit 8: Smooth scrolling effect",
+          "Slide taskbar buttons": "Bit 9: Taskbar button animation",
+          "Use hot tracking on menus": "Bit 10: Menu hover effects",
+          "Draw shadows under mouse pointer": "Bit 11: Enhanced pointer shadows",
+          "Use drop shadows for icon labels": "Bit 12: Desktop icon label shadows",
+          "Use visual styles on windows": "Bit 13: Windows visual styles"
+        }
       },
       {
         "name": "Show Shadows Under Mouse",
